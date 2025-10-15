@@ -369,11 +369,11 @@ export default function Visualizer() {
     }
     
     // Draw pulse ring
-    if (pulseRing.current.active) {
-      ctx.strokeStyle = `rgba(59, 130, 246, ${pulseRing.current.alpha})`;
+    if (pulseRing.current.active && pulseRing.current.radius > 0) {
+      ctx.strokeStyle = `rgba(59, 130, 246, ${Math.max(0, pulseRing.current.alpha)})`;
       ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.arc(ballX, ballY, pulseRing.current.radius, 0, Math.PI * 2);
+      ctx.arc(ballX, ballY, Math.max(0, pulseRing.current.radius), 0, Math.PI * 2);
       ctx.stroke();
     }
     
@@ -566,10 +566,11 @@ export default function Visualizer() {
     
     // Update pulse ring
     if (pulseRing.current.active) {
-      pulseRing.current.radius += 200 * dt;
-      pulseRing.current.alpha -= 2 * dt;
+      pulseRing.current.radius = Math.max(0, pulseRing.current.radius + 200 * dt);
+      pulseRing.current.alpha = Math.max(0, pulseRing.current.alpha - 2 * dt);
       if (pulseRing.current.alpha <= 0) {
         pulseRing.current.active = false;
+        pulseRing.current.radius = 0;
       }
     }
     
