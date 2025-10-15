@@ -1,0 +1,198 @@
+Build Prompt — “Multi-Sport Visualizer (Basketball • Football • Baseball)”
+
+Goal: A client-side web app (no backend) I can run in Replit and capture as a browser source. It’s a multi-sport play-by-play visualizer with switchable boards for Basketball, Football, Baseball. Keyboard/mouse control the ball, UI controls clocks/scores/possession, rosters/carriers, football downs, baseball inning + runners. Upload a home-team logo and place/resize it. Save/Load/New full sessions.
+
+Tech & Files
+
+Pure HTML/CSS/JS (no external libs).
+
+Three files:
+
+index.html — layout (left control panel + right canvas stage + HUD overlay)
+
+style.css — dark sci-fi HUD (blue/gold accents)
+
+script.js — rendering, input, state, timers, persistence
+
+Canvas logical size 1920×1080, responsive inside a panel with CSS aspect-ratio: 16 / 9. No zoom/jitter.
+
+Functional Requirements
+1) Sport switcher (must work)
+
+Buttons: 🏀 Basketball, 🏈 Football, ⚾ Baseball. Active gets .primary.
+
+Switching updates:
+
+Field/Court drawing (canvas)
+
+Sport-specific timers/controls
+
+Possession chip text (“BALL” vs “AT-BAT”)
+
+Default logo spot (only if user hasn’t positioned the logo yet)
+
+2) Fields / courts (drawn on canvas)
+
+Basketball: wood court gradient, sidelines, center circle, simplified 3-pt arcs.
+
+Football: green field, sidelines, yard lines every ~10 yds, hash marks.
+
+Baseball: green outfield, dirt infield diamond, all 4 bases.
+
+Add base direction arrows (visual).
+
+3) Ball render & movement (anywhere on field)
+
+Per sport ball:
+
+Basketball: orange with seams.
+
+Football: brown ellipse with white laces, rotates with movement direction.
+
+Baseball: white with red stitching.
+
+Keyboard: Arrows = move, Shift = sprint, Space = pulse ring.
+
+Mouse: Click-drag near the ball to drag it anywhere.
+
+Trail toggle (on/off).
+
+Carrier label: if set, draw #<number> under the ball.
+
+4) Scoreboard & possession
+
+Home/Away +1/+2/+3 (Baseball: only +1 counts).
+
+Reset scores; Swap Teams swaps names, scores, rosters.
+
+Possession toggle:
+
+Basketball/Football → “HOME BALL / AWAY BALL”
+
+Baseball → “HOME AT-BAT / AWAY AT-BAT”
+
+Top HUD chips show: Sport, Live LED, Phase/Period/Inning, Game clock, Sport timer/counter.
+
+5) Clocks & counters
+
+Game clock: start/stop/reset; speed toggle ×0.75 / ×1.00 / ×1.25 / ×1.50.
+
+Basketball: 24.0s shot clock with “24 → 14” and “Reset 24”; resets on possession change.
+
+Football: 40s play clock with “Reset 40” and “Delay +5s”; resets on possession change.
+
+Baseball: show B/S/O in the sport-timer chip with buttons:
+
+Add Ball, Add Strike, Add Out, Reset Count.
+
+When outs hit 3: reset B/S/O; clear bases; toggle Top ↔ Bottom; after Bottom → increment inning.
+
+6) Teams, rosters, & ball carrier
+
+Left panel:
+
+Inputs for Home / Away names.
+
+Inputs for Home / Away rosters (comma-separated jersey numbers).
+
+Save / Load each team to/from localStorage keys msv:home and msv:away.
+
+A dropdown built from rosters to choose a jersey number.
+
+Button “Make Ball Carrier / At-Bat” sets that number; show # under ball.
+
+7) Baseball runners
+
+Buttons: Advance 1B / 2B / 3B, Clear Bases.
+
+Keep runners as jersey numbers on B1/B2/B3. Advancing moves B1→B2→B3→Home; crossing Home adds a run for the at-bat team.
+
+Render runner numbers near bases.
+
+8) Football details
+
+Show a details section only in Football:
+
+Quarter controls: Q− / Q+. Overlay chip Q#.
+
+Down controls: Down− / Down+ (1st..4th). Overlay chip shows “1st & 10”, “2nd & 5”, etc.
+
+To-Go controls: −5 / +5 yards.
+
+These values are included in session save/load.
+
+9) Home team logo (upload, resize, drag, presets)
+
+Left panel “Home Logo” with:
+
+File input (PNG/JPG). Load into an Image() and draw it on the canvas.
+
+Size slider (0.1–1.0 scale).
+
+Drag Logo toggle → when on, let user drag the logo on the canvas.
+
+Position presets: Auto (per sport default), Top-Left, Top-Right, Center, Bottom-Left, Bottom-Right.
+
+Default logo spot applied per sport only if user hasn’t yet set a custom position.
+
+Persist logo position & scale in session save/load. (Don’t store the image file itself; user re-uploads on new browser/device.)
+
+10) Session Save/Load/New (full persistence)
+
+Buttons: Save Session, Load Session, New.
+
+Save JSON to localStorage key msv:session containing:
+
+sport, game clock time & running state, speed, sport timer/counters
+
+team names, rosters, scores, possession, carrier number
+
+basketball shot clock, football quarter/down/to-go, baseball inning/top-bottom, B/S/O, runners B1/B2/B3
+
+ball x/y, trail on/off
+
+logo position (x/y) and logo scale
+
+Load restores everything and updates UI/state; New clears msv:session.
+
+UX / Style
+
+Dark sci-fi HUD theme (blue/gold accents).
+
+Layout: left control panel, right stage with the canvas and HUD overlay (top bar chips, bottom hints).
+
+Canvas sizing: keep 16:9 with CSS; set canvas { width: 100%; height: 100% } and no JS resize loops.
+
+Clean, modular code: drawBasketballCourt(), drawFootballField(), drawBaseballField(), drawBallAndCarrier(), drawHomeLogo(), etc.
+
+Implementation Notes
+
+Use requestAnimationFrame; compute dt = (now - last) / 1000 (seconds) for accurate clock timing.
+
+Keyboard: prevent default arrow scrolling; smooth movement via simple acceleration/lerp so diagonals feel good.
+
+Mouse: implement hit-test around ball to drag; separate drag mode for logo.
+
+LocalStorage keys:
+
+msv:home, msv:away (teams)
+
+msv:session (entire session)
+
+Acceptance Tests
+
+Sport switch: Clicking 🏀/🏈/⚾ changes field art, sport chip label, possession chip text (BALL vs AT-BAT), and shows the correct sport-timer controls.
+
+Movement: Arrows move smoothly; Shift makes it faster; Space shows pulse ring. Mouse drag moves the ball anywhere.
+
+Scoreboard: +1/+2/+3 work; baseball ignores +2/+3; Reset works; Swap Teams swaps names/scores/rosters; possession chip updates.
+
+Clocks: Game clock ticks in real seconds with speed multiplier; Basketball shot clock + Football play clock decrement/display/reset properly; Baseball B/S/O reflects buttons; 3 outs auto flips Top/Bottom and clears bases (Bottom→Top increments inning).
+
+Rosters & Carrier: Save/Load each roster; pick a jersey in dropdown; “Make Ball Carrier / At-Bat” shows # under ball.
+
+Baseball runners: Advance buttons move runner numbers; scoring on Home works; Clear Bases works; base labels render.
+
+Logo: Upload displays on canvas; size slider changes size; Drag Logo lets me move it; presets jump to corners/center; default spot per sport applies only until I place it; position/scale persist in session save/load.
+
+Session Save/Load/New: After changing a bunch of settings, Save → refresh page → Load restores all state (including ball position, clocks, inning/quarter/down/to-go, runners, carrier, logo pos/scale).
