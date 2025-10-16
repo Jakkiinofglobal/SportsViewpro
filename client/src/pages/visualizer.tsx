@@ -1129,6 +1129,39 @@ export default function Visualizer() {
     playSound(220, 0.1); // A3 (lower pitch for warning)
   };
 
+  // Export functions
+  const exportSessionJSON = () => {
+    const exportData = {
+      ...state,
+      gameStats,
+      exportedAt: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `game-session-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportHistoryCSV = () => {
+    const headers = ['Timestamp', 'Type', 'Description'];
+    const rows = playHistory.map(event => [
+      new Date(event.timestamp).toISOString(),
+      event.type,
+      event.description
+    ]);
+    const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `play-history-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   // Camera presets
   const resetCamera = () => {
     setCameraZoom(1.0);
@@ -2201,6 +2234,30 @@ export default function Visualizer() {
           <Button data-testid="button-save-session" size="sm" variant="default" onClick={saveSession} className="w-full">Save Session</Button>
           <Button data-testid="button-load-session" size="sm" variant="outline" onClick={loadSession} className="w-full">Load Session</Button>
           <Button data-testid="button-new-session" size="sm" variant="outline" onClick={newSession} className="w-full">New Session</Button>
+          <div className="border-t pt-2">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground mb-2 block">Export</Label>
+            <div className="space-y-2">
+              <Button 
+                data-testid="button-export-json" 
+                size="sm" 
+                variant="outline" 
+                onClick={exportSessionJSON} 
+                className="w-full"
+              >
+                Export Session (JSON)
+              </Button>
+              <Button 
+                data-testid="button-export-csv" 
+                size="sm" 
+                variant="outline" 
+                onClick={exportHistoryCSV} 
+                className="w-full"
+                disabled={playHistory.length === 0}
+              >
+                Export History (CSV)
+              </Button>
+            </div>
+          </div>
         </Card>
       </div>
 
