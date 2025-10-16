@@ -23,6 +23,12 @@ import {
 type Sport = "basketball" | "football" | "baseball";
 type SpeedMultiplier = 0.75 | 1.0 | 1.25 | 1.5;
 
+interface PlayerHotkey {
+  jersey: string;
+  name: string;
+  hotkey: string;
+}
+
 interface GameState {
   sport: Sport;
   
@@ -35,6 +41,16 @@ interface GameState {
   awayScore: number;
   possession: "home" | "away";
   carrierNumber: string;
+  carrierName: string;
+  playerHotkeys: PlayerHotkey[];
+  scoreHotkeys: {
+    home1: string;
+    home2: string;
+    home3: string;
+    away1: string;
+    away2: string;
+    away3: string;
+  };
   
   // Clock
   gameClockTime: number;
@@ -108,6 +124,11 @@ export default function Visualizer() {
   const mousePos = useRef({ x: 0, y: 0 });
   const trailPoints = useRef<Array<{ x: number; y: number; alpha: number }>>([]);
   const pulseRing = useRef({ active: false, radius: 0, alpha: 1 });
+  const goalFlash = useRef<{ active: boolean; team: "home" | "away"; startTime: number }>({ 
+    active: false, 
+    team: "home", 
+    startTime: 0 
+  });
   
   // Ball physics refs (for smooth animation, synced to state periodically)
   const ballPhysics = useRef({
@@ -130,6 +151,16 @@ export default function Visualizer() {
     awayScore: 0,
     possession: "home",
     carrierNumber: "",
+    carrierName: "",
+    playerHotkeys: [],
+    scoreHotkeys: {
+      home1: "",
+      home2: "",
+      home3: "",
+      away1: "",
+      away2: "",
+      away3: "",
+    },
     gameClockTime: 720,
     gameClockRunning: false,
     speedMultiplier: 1.0,
@@ -219,7 +250,17 @@ export default function Visualizer() {
         setState({
           ...data,
           homeVideoClips: data.homeVideoClips || [],
-          awayVideoClips: data.awayVideoClips || []
+          awayVideoClips: data.awayVideoClips || [],
+          playerHotkeys: data.playerHotkeys || [],
+          scoreHotkeys: data.scoreHotkeys || {
+            home1: "",
+            home2: "",
+            home3: "",
+            away1: "",
+            away2: "",
+            away3: "",
+          },
+          carrierName: data.carrierName || "",
         });
         setHomeRosterInput(data.homeRoster.join(", "));
         setAwayRosterInput(data.awayRoster.join(", "));
@@ -597,13 +638,22 @@ export default function Visualizer() {
     
     // Carrier label
     if (carrierNumber) {
+      const hasName = state.carrierName && state.carrierName.trim() !== "";
+      const labelHeight = hasName ? 38 : 24;
+      const labelWidth = hasName ? Math.max(80, state.carrierName.length * 7) : 50;
+      
       ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-      ctx.fillRect(ballX - 25, ballY + 30, 50, 24);
+      ctx.fillRect(ballX - labelWidth/2, ballY + 30, labelWidth, labelHeight);
       ctx.fillStyle = "#ffffff";
       ctx.font = "600 14px 'JetBrains Mono'";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(`#${carrierNumber}`, ballX, ballY + 42);
+      ctx.fillText(`#${carrierNumber}`, ballX, ballY + (hasName ? 38 : 42));
+      
+      if (hasName) {
+        ctx.font = "400 11px 'JetBrains Mono'";
+        ctx.fillText(state.carrierName, ballX, ballY + 55);
+      }
     }
   };
 
@@ -702,6 +752,63 @@ export default function Visualizer() {
     
     // Draw endzone logos (football only)
     drawEndzoneLogos(ctx);
+    
+    // Draw goal flash effect
+    if (goalFlash.current.active) {
+      const elapsed = timestamp - goalFlash.current.startTime;
+      const duration = 800; // 800ms
+      
+      if (elapsed < duration) {
+        const progress = elapsed / duration;
+        const alpha = Math.max(0, 1 - progress);
+        const pulseScale = 1 + Math.sin(progress * Math.PI * 4) * 0.1;
+        
+        ctx.fillStyle = `rgba(255, 215, 0, ${alpha * 0.3})`;
+        
+        if (state.sport === "basketball") {
+          // Light up the hoop area
+          const hoopX = goalFlash.current.team === "home" ? 180 : 1740;
+          const hoopY = 540;
+          const radius = 120 * pulseScale;
+          
+          ctx.beginPath();
+          ctx.arc(hoopX, hoopY, radius, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Outer glow
+          ctx.strokeStyle = `rgba(255, 215, 0, ${alpha * 0.5})`;
+          ctx.lineWidth = 15;
+          ctx.stroke();
+        } else if (state.sport === "football") {
+          // Light up the endzone
+          const endzoneX = goalFlash.current.team === "home" ? 100 : 1820;
+          const rectWidth = 100;
+          
+          ctx.fillRect(endzoneX - rectWidth / 2, 200, rectWidth, 680);
+          
+          // Outer glow
+          ctx.strokeStyle = `rgba(255, 215, 0, ${alpha * 0.5})`;
+          ctx.lineWidth = 15;
+          ctx.strokeRect(endzoneX - rectWidth / 2, 200, rectWidth, 680);
+        } else if (state.sport === "baseball") {
+          // Light up home plate area
+          const homeX = 960;
+          const homeY = 900;
+          const size = 100 * pulseScale;
+          
+          ctx.beginPath();
+          ctx.arc(homeX, homeY, size, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Outer glow
+          ctx.strokeStyle = `rgba(255, 215, 0, ${alpha * 0.5})`;
+          ctx.lineWidth = 15;
+          ctx.stroke();
+        }
+      } else {
+        goalFlash.current.active = false;
+      }
+    }
     
     // Update ball movement
     if (!isDraggingBall.current) {
@@ -804,6 +911,91 @@ export default function Visualizer() {
       if (e.key === "Shift") {
         keysPressed.current.add("Shift");
       }
+      
+      // Check for player hotkeys
+      const playerHotkey = stateRef.current.playerHotkeys.find(h => h.hotkey.toLowerCase() === e.key.toLowerCase());
+      if (playerHotkey) {
+        setState(prev => ({ 
+          ...prev, 
+          carrierNumber: playerHotkey.jersey,
+          carrierName: playerHotkey.name 
+        }));
+        toast({ description: `${playerHotkey.name} (#${playerHotkey.jersey}) set as carrier` });
+        return;
+      }
+      
+      // Check for score hotkeys
+      const triggerScore = (team: "home" | "away", points: number) => {
+        setState(prev => {
+          const newScore = (team === "home" ? prev.homeScore : prev.awayScore) + points;
+          const teamName = team === "home" ? prev.homeTeam : prev.awayTeam;
+          
+          // Update game stats
+          setGameStats(prevStats => ({
+            ...prevStats,
+            [team === "home" ? "homeScores" : "awayScores"]: [...(team === "home" ? prevStats.homeScores : prevStats.awayScores), points],
+            consecutivePoints: prevStats.lastScoreTeam === team ? prevStats.consecutivePoints + points : points,
+            lastScoreTeam: team
+          }));
+          
+          // Log event
+          setPlayHistory(prevHistory => [{
+            id: Date.now().toString(),
+            timestamp: Date.now(),
+            type: "score" as const,
+            description: `${teamName} +${points} (${newScore})`
+          }, ...prevHistory].slice(0, 100));
+          
+          // Play sound
+          if (soundEnabled && volume > 0) {
+            const frequencies = { 1: 523, 2: 659, 3: 784 };
+            const frequency = frequencies[points as keyof typeof frequencies] || 523;
+            
+            if (!audioContextRef.current) {
+              audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+            }
+            
+            const ctx = audioContextRef.current;
+            const oscillator = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(ctx.destination);
+            
+            oscillator.frequency.value = frequency;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(volume * 0.3, ctx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+            
+            oscillator.start(ctx.currentTime);
+            oscillator.stop(ctx.currentTime + 0.2);
+          }
+          
+          // Trigger goal flash
+          goalFlash.current = { active: true, team, startTime: performance.now() };
+          
+          return { 
+            ...prev, 
+            [team === "home" ? "homeScore" : "awayScore"]: newScore
+          };
+        });
+      };
+      
+      const hotkeys = stateRef.current.scoreHotkeys;
+      if (hotkeys.home1 && e.key.toLowerCase() === hotkeys.home1.toLowerCase()) {
+        triggerScore("home", 1);
+      } else if (hotkeys.home2 && e.key.toLowerCase() === hotkeys.home2.toLowerCase()) {
+        triggerScore("home", 2);
+      } else if (hotkeys.home3 && e.key.toLowerCase() === hotkeys.home3.toLowerCase()) {
+        triggerScore("home", 3);
+      } else if (hotkeys.away1 && e.key.toLowerCase() === hotkeys.away1.toLowerCase()) {
+        triggerScore("away", 1);
+      } else if (hotkeys.away2 && e.key.toLowerCase() === hotkeys.away2.toLowerCase()) {
+        triggerScore("away", 2);
+      } else if (hotkeys.away3 && e.key.toLowerCase() === hotkeys.away3.toLowerCase()) {
+        triggerScore("away", 3);
+      }
     };
     
     const handleKeyUp = (e: KeyboardEvent) => {
@@ -817,7 +1009,7 @@ export default function Visualizer() {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, []);
+  }, [toast, soundEnabled, volume]);
 
   // Mouse
   useEffect(() => {
@@ -1317,6 +1509,220 @@ export default function Visualizer() {
           </div>
         </Card>
 
+        {/* Player Hotkeys */}
+        <Card className="p-4 space-y-3">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Player Hotkeys</Label>
+          <div className="space-y-2">
+            {allRoster.map(jersey => {
+              const existing = state.playerHotkeys.find(h => h.jersey === jersey);
+              return (
+                <div key={jersey} className="flex gap-2 items-center">
+                  <span className="text-xs font-mono w-8">#{jersey}</span>
+                  <Input
+                    data-testid={`input-player-name-${jersey}`}
+                    placeholder="Name"
+                    value={existing?.name || ""}
+                    onChange={(e) => {
+                      const newHotkeys = state.playerHotkeys.filter(h => h.jersey !== jersey);
+                      if (e.target.value || existing?.hotkey) {
+                        newHotkeys.push({ jersey, name: e.target.value, hotkey: existing?.hotkey || "" });
+                      }
+                      setState(prev => ({ ...prev, playerHotkeys: newHotkeys }));
+                    }}
+                    className="flex-1 h-8 text-xs"
+                  />
+                  <Input
+                    data-testid={`input-player-hotkey-${jersey}`}
+                    placeholder="Key"
+                    value={existing?.hotkey || ""}
+                    onChange={(e) => {
+                      const key = e.target.value.slice(-1).toLowerCase();
+                      if (key && !/^[0-9a-z]$/.test(key)) {
+                        toast({ description: "Hotkey must be 0-9 or a-z", variant: "destructive" });
+                        return;
+                      }
+                      
+                      // Check for conflicts
+                      const conflict = state.playerHotkeys.find(h => h.jersey !== jersey && h.hotkey === key);
+                      if (conflict && key) {
+                        toast({ description: `Key '${key}' already used by #${conflict.jersey}`, variant: "destructive" });
+                        return;
+                      }
+                      
+                      const newHotkeys = state.playerHotkeys.filter(h => h.jersey !== jersey);
+                      if (key || existing?.name) {
+                        newHotkeys.push({ jersey, name: existing?.name || "", hotkey: key });
+                      }
+                      setState(prev => ({ ...prev, playerHotkeys: newHotkeys }));
+                      if (key && existing?.name) {
+                        toast({ description: `Hotkey '${key}' assigned to ${existing.name} (#${jersey})` });
+                      }
+                    }}
+                    maxLength={1}
+                    className="w-12 h-8 text-xs text-center"
+                  />
+                </div>
+              );
+            })}
+          </div>
+          {state.playerHotkeys.length > 0 && (
+            <div className="border-t pt-2">
+              <div className="text-xs text-muted-foreground mb-1">Active Hotkeys:</div>
+              <div className="text-xs space-y-1">
+                {state.playerHotkeys.filter(h => h.hotkey).map(h => (
+                  <div key={h.jersey} className="flex justify-between">
+                    <span>{h.hotkey.toUpperCase()}</span>
+                    <span className="font-mono">#{h.jersey} {h.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <Button
+            data-testid="button-clear-hotkeys"
+            size="sm"
+            variant="outline"
+            onClick={() => setState(prev => ({ ...prev, playerHotkeys: [] }))}
+            disabled={state.playerHotkeys.length === 0}
+            className="w-full"
+          >
+            Clear All Hotkeys
+          </Button>
+        </Card>
+
+        {/* Ball Carrier */}
+        <Card className="p-4 space-y-3">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Ball Carrier</Label>
+          <Select value={selectedCarrier} onValueChange={setSelectedCarrier}>
+            <SelectTrigger data-testid="select-carrier">
+              <SelectValue placeholder="Select Jersey #" />
+            </SelectTrigger>
+            <SelectContent>
+              {allRoster.map(num => (
+                <SelectItem key={num} value={num}>#{num}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            data-testid="button-set-carrier"
+            size="sm"
+            variant="default"
+            onClick={() => {
+              setState(prev => ({ ...prev, carrierNumber: selectedCarrier }));
+              // Auto-fill name if hotkey exists
+              const hotkey = state.playerHotkeys.find(h => h.jersey === selectedCarrier);
+              if (hotkey?.name) {
+                setState(prev => ({ ...prev, carrierName: hotkey.name }));
+              }
+            }}
+            disabled={!selectedCarrier}
+            className="w-full"
+          >
+            Make {state.sport === "baseball" ? "At-Bat" : "Ball Carrier"}
+          </Button>
+          {state.carrierNumber && (
+            <div className="text-sm text-center text-muted-foreground">
+              Current: #{state.carrierNumber} {state.carrierName && `(${state.carrierName})`}
+            </div>
+          )}
+        </Card>
+
+        {/* Video Clips */}
+        <Card className="p-4 space-y-3">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Video Clips</Label>
+          
+          <div className="space-y-3">
+            <div>
+              <div className="text-sm font-medium mb-2">{state.homeTeam} Team</div>
+              <div className="space-y-2">
+                {[0, 1, 2, 3, 4].map(index => (
+                  <div key={`home-${index}`} className="flex gap-2 items-center">
+                    <div className="flex-1 flex gap-2">
+                      <Input
+                        type="file"
+                        accept="video/*"
+                        onChange={(e) => handleVideoUpload("home", index, e)}
+                        className="text-xs"
+                        data-testid={`input-home-video-${index}`}
+                      />
+                      {state.homeVideoClips?.[index] && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() => setPlayingVideo(state.homeVideoClips[index])}
+                            data-testid={`button-play-home-${index}`}
+                          >
+                            Play
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => removeVideoClip("home", index)}
+                            data-testid={`button-remove-home-${index}`}
+                          >
+                            ✕
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-sm font-medium mb-2">{state.awayTeam} Team</div>
+              <div className="space-y-2">
+                {[0, 1, 2, 3, 4].map(index => (
+                  <div key={`away-${index}`} className="flex gap-2 items-center">
+                    <div className="flex-1 flex gap-2">
+                      <Input
+                        type="file"
+                        accept="video/*"
+                        onChange={(e) => handleVideoUpload("away", index, e)}
+                        className="text-xs"
+                        data-testid={`input-away-video-${index}`}
+                      />
+                      {state.awayVideoClips?.[index] && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() => setPlayingVideo(state.awayVideoClips[index])}
+                            data-testid={`button-play-away-${index}`}
+                          >
+                            Play
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => removeVideoClip("away", index)}
+                            data-testid={`button-remove-away-${index}`}
+                          >
+                            ✕
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Basketball Shot Clock Reset (moved here) */}
+        {state.sport === "basketball" && (
+          <Card className="p-4 space-y-3">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Shot Clock Reset</Label>
+            <div className="flex gap-2">
+              <Button data-testid="button-shot-14" size="sm" variant="outline" onClick={() => setState(prev => ({ ...prev, shotClockTime: 14.0 }))} className="flex-1">24→14</Button>
+              <Button data-testid="button-shot-reset" size="sm" variant="outline" onClick={() => setState(prev => ({ ...prev, shotClockTime: 24.0 }))} className="flex-1">Reset 24</Button>
+            </div>
+          </Card>
+        )}
+
         {/* Scoreboard */}
         <Card className="p-4 space-y-3">
           <Label className="text-xs uppercase tracking-wide text-muted-foreground">Scoreboard</Label>
@@ -1334,7 +1740,8 @@ export default function Visualizer() {
                     consecutivePoints: prev.lastScoreTeam === "home" ? prev.consecutivePoints + 1 : 1,
                     lastScoreTeam: "home"
                   }));
-                }}>+1</Button>
+                  goalFlash.current = { active: true, team: "home", startTime: performance.now() };
+                }}>{state.scoreHotkeys.home1 ? `+1 (${state.scoreHotkeys.home1.toUpperCase()})` : "+1"}</Button>
                 {state.sport !== "baseball" && <Button data-testid="button-home-plus2" size="sm" variant="outline" onClick={() => { 
                   setState(prev => ({ ...prev, homeScore: prev.homeScore + 2 })); 
                   logEvent("score", `${state.homeTeam} +2 (${state.homeScore + 2})`); 
@@ -1345,7 +1752,8 @@ export default function Visualizer() {
                     consecutivePoints: prev.lastScoreTeam === "home" ? prev.consecutivePoints + 2 : 2,
                     lastScoreTeam: "home"
                   }));
-                }}>+2</Button>}
+                  goalFlash.current = { active: true, team: "home", startTime: performance.now() };
+                }}>{state.scoreHotkeys.home2 ? `+2 (${state.scoreHotkeys.home2.toUpperCase()})` : "+2"}</Button>}
                 {state.sport !== "baseball" && <Button data-testid="button-home-plus3" size="sm" variant="outline" onClick={() => { 
                   setState(prev => ({ ...prev, homeScore: prev.homeScore + 3 })); 
                   logEvent("score", `${state.homeTeam} +3 (${state.homeScore + 3})`); 
@@ -1356,9 +1764,61 @@ export default function Visualizer() {
                     consecutivePoints: prev.lastScoreTeam === "home" ? prev.consecutivePoints + 3 : 3,
                     lastScoreTeam: "home"
                   }));
-                }}>+3</Button>}
+                  goalFlash.current = { active: true, team: "home", startTime: performance.now() };
+                }}>{state.scoreHotkeys.home3 ? `+3 (${state.scoreHotkeys.home3.toUpperCase()})` : "+3"}</Button>}
               </div>
               <span data-testid="text-home-score" className="text-2xl font-display font-bold">{state.homeScore}</span>
+            </div>
+            <div className="text-xs space-y-1">
+              <div className="flex gap-1 items-center">
+                <span className="w-12">+1 Key:</span>
+                <Input
+                  data-testid="input-hotkey-home1"
+                  value={state.scoreHotkeys.home1}
+                  onChange={(e) => {
+                    const key = e.target.value.slice(-1).toLowerCase();
+                    if (key && !/^[0-9a-z]$/.test(key)) return;
+                    setState(prev => ({ ...prev, scoreHotkeys: { ...prev.scoreHotkeys, home1: key } }));
+                  }}
+                  maxLength={1}
+                  className="h-6 w-12 text-xs text-center"
+                  placeholder="?"
+                />
+                {state.sport !== "baseball" && (
+                  <>
+                    <span className="w-12 ml-2">+2 Key:</span>
+                    <Input
+                      data-testid="input-hotkey-home2"
+                      value={state.scoreHotkeys.home2}
+                      onChange={(e) => {
+                        const key = e.target.value.slice(-1).toLowerCase();
+                        if (key && !/^[0-9a-z]$/.test(key)) return;
+                        setState(prev => ({ ...prev, scoreHotkeys: { ...prev.scoreHotkeys, home2: key } }));
+                      }}
+                      maxLength={1}
+                      className="h-6 w-12 text-xs text-center"
+                      placeholder="?"
+                    />
+                  </>
+                )}
+                {state.sport !== "baseball" && (
+                  <>
+                    <span className="w-12 ml-2">+3 Key:</span>
+                    <Input
+                      data-testid="input-hotkey-home3"
+                      value={state.scoreHotkeys.home3}
+                      onChange={(e) => {
+                        const key = e.target.value.slice(-1).toLowerCase();
+                        if (key && !/^[0-9a-z]$/.test(key)) return;
+                        setState(prev => ({ ...prev, scoreHotkeys: { ...prev.scoreHotkeys, home3: key } }));
+                      }}
+                      maxLength={1}
+                      className="h-6 w-12 text-xs text-center"
+                      placeholder="?"
+                    />
+                  </>
+                )}
+              </div>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm font-mono">{state.awayTeam}</span>
@@ -1373,7 +1833,8 @@ export default function Visualizer() {
                     consecutivePoints: prev.lastScoreTeam === "away" ? prev.consecutivePoints + 1 : 1,
                     lastScoreTeam: "away"
                   }));
-                }}>+1</Button>
+                  goalFlash.current = { active: true, team: "away", startTime: performance.now() };
+                }}>{state.scoreHotkeys.away1 ? `+1 (${state.scoreHotkeys.away1.toUpperCase()})` : "+1"}</Button>
                 {state.sport !== "baseball" && <Button data-testid="button-away-plus2" size="sm" variant="outline" onClick={() => { 
                   setState(prev => ({ ...prev, awayScore: prev.awayScore + 2 })); 
                   logEvent("score", `${state.awayTeam} +2 (${state.awayScore + 2})`); 
@@ -1384,7 +1845,8 @@ export default function Visualizer() {
                     consecutivePoints: prev.lastScoreTeam === "away" ? prev.consecutivePoints + 2 : 2,
                     lastScoreTeam: "away"
                   }));
-                }}>+2</Button>}
+                  goalFlash.current = { active: true, team: "away", startTime: performance.now() };
+                }}>{state.scoreHotkeys.away2 ? `+2 (${state.scoreHotkeys.away2.toUpperCase()})` : "+2"}</Button>}
                 {state.sport !== "baseball" && <Button data-testid="button-away-plus3" size="sm" variant="outline" onClick={() => { 
                   setState(prev => ({ ...prev, awayScore: prev.awayScore + 3 })); 
                   logEvent("score", `${state.awayTeam} +3 (${state.awayScore + 3})`); 
@@ -1395,9 +1857,61 @@ export default function Visualizer() {
                     consecutivePoints: prev.lastScoreTeam === "away" ? prev.consecutivePoints + 3 : 3,
                     lastScoreTeam: "away"
                   }));
-                }}>+3</Button>}
+                  goalFlash.current = { active: true, team: "away", startTime: performance.now() };
+                }}>{state.scoreHotkeys.away3 ? `+3 (${state.scoreHotkeys.away3.toUpperCase()})` : "+3"}</Button>}
               </div>
               <span data-testid="text-away-score" className="text-2xl font-display font-bold">{state.awayScore}</span>
+            </div>
+            <div className="text-xs space-y-1">
+              <div className="flex gap-1 items-center">
+                <span className="w-12">+1 Key:</span>
+                <Input
+                  data-testid="input-hotkey-away1"
+                  value={state.scoreHotkeys.away1}
+                  onChange={(e) => {
+                    const key = e.target.value.slice(-1).toLowerCase();
+                    if (key && !/^[0-9a-z]$/.test(key)) return;
+                    setState(prev => ({ ...prev, scoreHotkeys: { ...prev.scoreHotkeys, away1: key } }));
+                  }}
+                  maxLength={1}
+                  className="h-6 w-12 text-xs text-center"
+                  placeholder="?"
+                />
+                {state.sport !== "baseball" && (
+                  <>
+                    <span className="w-12 ml-2">+2 Key:</span>
+                    <Input
+                      data-testid="input-hotkey-away2"
+                      value={state.scoreHotkeys.away2}
+                      onChange={(e) => {
+                        const key = e.target.value.slice(-1).toLowerCase();
+                        if (key && !/^[0-9a-z]$/.test(key)) return;
+                        setState(prev => ({ ...prev, scoreHotkeys: { ...prev.scoreHotkeys, away2: key } }));
+                      }}
+                      maxLength={1}
+                      className="h-6 w-12 text-xs text-center"
+                      placeholder="?"
+                    />
+                  </>
+                )}
+                {state.sport !== "baseball" && (
+                  <>
+                    <span className="w-12 ml-2">+3 Key:</span>
+                    <Input
+                      data-testid="input-hotkey-away3"
+                      value={state.scoreHotkeys.away3}
+                      onChange={(e) => {
+                        const key = e.target.value.slice(-1).toLowerCase();
+                        if (key && !/^[0-9a-z]$/.test(key)) return;
+                        setState(prev => ({ ...prev, scoreHotkeys: { ...prev.scoreHotkeys, away3: key } }));
+                      }}
+                      maxLength={1}
+                      className="h-6 w-12 text-xs text-center"
+                      placeholder="?"
+                    />
+                  </>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex gap-2">
@@ -1479,10 +1993,6 @@ export default function Visualizer() {
             <Card className="p-4 space-y-3">
               <Label className="text-xs uppercase tracking-wide text-muted-foreground">Shot Clock</Label>
               <div data-testid="text-shot-clock" className="text-3xl font-mono font-bold text-center">{state.shotClockTime.toFixed(1)}</div>
-              <div className="flex gap-2">
-                <Button data-testid="button-shot-14" size="sm" variant="outline" onClick={() => setState(prev => ({ ...prev, shotClockTime: 14.0 }))} className="flex-1">24→14</Button>
-                <Button data-testid="button-shot-reset" size="sm" variant="outline" onClick={() => setState(prev => ({ ...prev, shotClockTime: 24.0 }))} className="flex-1">Reset 24</Button>
-              </div>
             </Card>
             <Card className="p-4 space-y-3">
               <Label className="text-xs uppercase tracking-wide text-muted-foreground">Quarter</Label>
@@ -1729,36 +2239,6 @@ export default function Visualizer() {
             </Card>
           </>
         )}
-
-        {/* Roster & Carrier */}
-        <Card className="p-4 space-y-3">
-          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Ball Carrier</Label>
-          <Select value={selectedCarrier} onValueChange={setSelectedCarrier}>
-            <SelectTrigger data-testid="select-carrier">
-              <SelectValue placeholder="Select Jersey #" />
-            </SelectTrigger>
-            <SelectContent>
-              {allRoster.map(num => (
-                <SelectItem key={num} value={num}>#{num}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            data-testid="button-set-carrier"
-            size="sm"
-            variant="default"
-            onClick={() => setState(prev => ({ ...prev, carrierNumber: selectedCarrier }))}
-            disabled={!selectedCarrier}
-            className="w-full"
-          >
-            Make {state.sport === "baseball" ? "At-Bat" : "Ball Carrier"}
-          </Button>
-          {state.carrierNumber && (
-            <div className="text-sm text-center text-muted-foreground">
-              Current: #{state.carrierNumber}
-            </div>
-          )}
-        </Card>
 
         {/* Ball Controls */}
         <Card className="p-4 space-y-3">
@@ -2050,91 +2530,6 @@ export default function Visualizer() {
             </Card>
           </>
         )}
-
-        {/* Video Clips */}
-        <Card className="p-4 space-y-3">
-          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Video Clips</Label>
-          
-          <div className="space-y-3">
-            <div>
-              <div className="text-sm font-medium mb-2">{state.homeTeam} Team</div>
-              <div className="space-y-2">
-                {[0, 1, 2, 3, 4].map(index => (
-                  <div key={`home-${index}`} className="flex gap-2 items-center">
-                    <div className="flex-1 flex gap-2">
-                      <Input
-                        type="file"
-                        accept="video/*"
-                        onChange={(e) => handleVideoUpload("home", index, e)}
-                        className="text-xs"
-                        data-testid={`input-home-video-${index}`}
-                      />
-                      {state.homeVideoClips?.[index] && (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="default"
-                            onClick={() => setPlayingVideo(state.homeVideoClips[index])}
-                            data-testid={`button-play-home-${index}`}
-                          >
-                            Play
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => removeVideoClip("home", index)}
-                            data-testid={`button-remove-home-${index}`}
-                          >
-                            ✕
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <div className="text-sm font-medium mb-2">{state.awayTeam} Team</div>
-              <div className="space-y-2">
-                {[0, 1, 2, 3, 4].map(index => (
-                  <div key={`away-${index}`} className="flex gap-2 items-center">
-                    <div className="flex-1 flex gap-2">
-                      <Input
-                        type="file"
-                        accept="video/*"
-                        onChange={(e) => handleVideoUpload("away", index, e)}
-                        className="text-xs"
-                        data-testid={`input-away-video-${index}`}
-                      />
-                      {state.awayVideoClips?.[index] && (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="default"
-                            onClick={() => setPlayingVideo(state.awayVideoClips[index])}
-                            data-testid={`button-play-away-${index}`}
-                          >
-                            Play
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => removeVideoClip("away", index)}
-                            data-testid={`button-remove-away-${index}`}
-                          >
-                            ✕
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </Card>
 
         {/* Game Stats */}
         <Card className="p-4 space-y-3">
