@@ -1148,11 +1148,13 @@ export default function Visualizer() {
       newHotkeys.push({ jersey, name, hotkey: hotkey.toLowerCase() });
     }
 
+    // All-or-nothing: if there are ANY errors, don't load anything
     if (errors.length > 0) {
       toast({ 
-        description: `Errors found:\n${errors.join("\n")}`, 
+        description: errors.join("\n"), 
         variant: "destructive" 
       });
+      return;
     }
 
     if (newHotkeys.length > 0) {
