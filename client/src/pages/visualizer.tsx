@@ -1762,6 +1762,12 @@ export default function Visualizer() {
             <div className="flex items-center justify-between">
               <span className="text-sm font-mono">{state.homeTeam}</span>
               <div className="flex gap-1">
+                <Button data-testid="button-home-minus1" size="sm" variant="outline" onClick={() => { 
+                  if (state.homeScore > 0) {
+                    setState(prev => ({ ...prev, homeScore: prev.homeScore - 1 })); 
+                    logEvent("score", `${state.homeTeam} -1 (${state.homeScore - 1})`); 
+                  }
+                }}>-1</Button>
                 <Button data-testid="button-home-plus1" size="sm" variant="outline" onClick={() => { 
                   setState(prev => ({ ...prev, homeScore: prev.homeScore + 1 })); 
                   logEvent("score", `${state.homeTeam} +1 (${state.homeScore + 1})`); 
@@ -1855,6 +1861,12 @@ export default function Visualizer() {
             <div className="flex items-center justify-between">
               <span className="text-sm font-mono">{state.awayTeam}</span>
               <div className="flex gap-1">
+                <Button data-testid="button-away-minus1" size="sm" variant="outline" onClick={() => { 
+                  if (state.awayScore > 0) {
+                    setState(prev => ({ ...prev, awayScore: prev.awayScore - 1 })); 
+                    logEvent("score", `${state.awayTeam} -1 (${state.awayScore - 1})`); 
+                  }
+                }}>-1</Button>
                 <Button data-testid="button-away-plus1" size="sm" variant="outline" onClick={() => { 
                   setState(prev => ({ ...prev, awayScore: prev.awayScore + 1 })); 
                   logEvent("score", `${state.awayTeam} +1 (${state.awayScore + 1})`); 

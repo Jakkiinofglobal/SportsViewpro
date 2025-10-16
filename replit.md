@@ -63,8 +63,10 @@ This is a pure client-side application (no backend) that provides a comprehensiv
 - **Carrier Label**: Shows jersey number and player name below ball when set
 
 ### Game Controls
-- **Scoreboard**: Home/Away scores with +1/+2/+3 buttons (Baseball uses +1 only)
-- **Teams**: Name input, roster management (comma-separated jersey numbers)
+- **Scoreboard**: Home/Away scores with -1 and +1/+2/+3 buttons (Baseball uses -1/+1 only)
+  - -1 buttons allow point correction (minimum score: 0)
+  - Add buttons with optional keyboard hotkeys for quick scoring
+- **Teams**: Name input, roster management via unified interface
 - **Possession**: Toggle with automatic clock resets on change
 - **Game Clock**: Start/Stop/Reset with speed multiplier (×0.75/×1.00/×1.25/×1.50)
 
@@ -260,6 +262,13 @@ LocalStorage keys used:
 - Responsive canvas with stable 1920×1080 logical coordinates
 
 ## Recent Changes
+
+### 2025-10-16: Score Correction & Quarter Fix
+- **Score Correction Buttons**: Added -1 buttons for both home and away teams to allow point corrections
+  - Prevents score from going below 0
+  - Logs correction events to play history
+  - No sound/visual effects for corrections (maintains focus on actual scoring)
+- **Quarter Display Fix**: Fixed NaN display issue in quarter/period display when loading older sessions
 
 ### 2025-10-16: Unified Teams & Player Hotkeys System
 - **Consolidated Interface**: Combined Teams, Player Hotkeys, and Ball Carrier into single "Teams & Player Hotkeys" card
