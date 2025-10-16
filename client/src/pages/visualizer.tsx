@@ -178,6 +178,9 @@ export default function Visualizer() {
   const [showHistory, setShowHistory] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [volume, setVolume] = useState(0.5);
+  const [cameraZoom, setCameraZoom] = useState(1.0);
+  const [cameraPanX, setCameraPanX] = useState(0);
+  const [cameraPanY, setCameraPanY] = useState(0);
   const audioContextRef = useRef<AudioContext | null>(null);
   const stateRef = useRef(state);
 
@@ -652,6 +655,12 @@ export default function Visualizer() {
     // Clear
     ctx.clearRect(0, 0, 1920, 1080);
     
+    // Apply camera transformations
+    ctx.save();
+    ctx.translate(960 + cameraPanX, 540 + cameraPanY);
+    ctx.scale(cameraZoom, cameraZoom);
+    ctx.translate(-960, -540);
+    
     // Draw field
     if (state.sport === "basketball") drawBasketballCourt(ctx);
     else if (state.sport === "football") drawFootballField(ctx);
@@ -718,6 +727,9 @@ export default function Visualizer() {
     
     // Draw ball
     drawBall(ctx);
+    
+    // Restore camera transformations
+    ctx.restore();
     
     // Update clocks
     if (state.gameClockRunning && state.gameClockTime > 0) {
@@ -1090,6 +1102,49 @@ export default function Visualizer() {
   
   const playClockWarningSound = () => {
     playSound(220, 0.1); // A3 (lower pitch for warning)
+  };
+
+  // Camera presets
+  const resetCamera = () => {
+    setCameraZoom(1.0);
+    setCameraPanX(0);
+    setCameraPanY(0);
+  };
+
+  const applyCameraPreset = (preset: string) => {
+    switch (preset) {
+      case "center":
+        setCameraZoom(1.0);
+        setCameraPanX(0);
+        setCameraPanY(0);
+        break;
+      case "zoom-goal":
+        // Zoom into goal/endzone area
+        if (state.sport === "basketball") {
+          setCameraZoom(2.0);
+          setCameraPanX(-400);
+          setCameraPanY(-200);
+        } else if (state.sport === "football") {
+          setCameraZoom(1.8);
+          setCameraPanX(-500);
+          setCameraPanY(0);
+        } else if (state.sport === "baseball") {
+          setCameraZoom(2.0);
+          setCameraPanX(0);
+          setCameraPanY(-300);
+        }
+        break;
+      case "wide":
+        setCameraZoom(0.8);
+        setCameraPanX(0);
+        setCameraPanY(0);
+        break;
+      case "action":
+        setCameraZoom(1.5);
+        setCameraPanX(cameraPanX);
+        setCameraPanY(cameraPanY);
+        break;
+    }
   };
 
   // Event logging
@@ -1642,6 +1697,104 @@ export default function Visualizer() {
             />
             <div className="text-xs text-muted-foreground text-center mt-1">{(volume * 100).toFixed(0)}%</div>
           </div>
+        </Card>
+
+        {/* Camera Controls */}
+        <Card className="p-4 space-y-3">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Camera & Zoom</Label>
+          <div>
+            <Label className="text-xs">Zoom Level</Label>
+            <Slider
+              data-testid="slider-zoom"
+              value={[cameraZoom]}
+              onValueChange={([val]) => setCameraZoom(val)}
+              min={0.5}
+              max={3.0}
+              step={0.1}
+              className="mt-2"
+            />
+            <div className="text-xs text-muted-foreground text-center mt-1">{cameraZoom.toFixed(1)}x</div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              data-testid="button-pan-up"
+              size="sm"
+              variant="outline"
+              onClick={() => setCameraPanY(prev => prev + 50)}
+            >
+              Pan ↑
+            </Button>
+            <Button
+              data-testid="button-pan-down"
+              size="sm"
+              variant="outline"
+              onClick={() => setCameraPanY(prev => prev - 50)}
+            >
+              Pan ↓
+            </Button>
+            <Button
+              data-testid="button-pan-left"
+              size="sm"
+              variant="outline"
+              onClick={() => setCameraPanX(prev => prev + 50)}
+            >
+              Pan ←
+            </Button>
+            <Button
+              data-testid="button-pan-right"
+              size="sm"
+              variant="outline"
+              onClick={() => setCameraPanX(prev => prev - 50)}
+            >
+              Pan →
+            </Button>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs">Presets</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                data-testid="button-preset-center"
+                size="sm"
+                variant="outline"
+                onClick={() => applyCameraPreset("center")}
+              >
+                Center
+              </Button>
+              <Button
+                data-testid="button-preset-wide"
+                size="sm"
+                variant="outline"
+                onClick={() => applyCameraPreset("wide")}
+              >
+                Wide
+              </Button>
+              <Button
+                data-testid="button-preset-goal"
+                size="sm"
+                variant="outline"
+                onClick={() => applyCameraPreset("zoom-goal")}
+              >
+                {state.sport === "basketball" ? "Goal" : state.sport === "football" ? "Endzone" : "Home"}
+              </Button>
+              <Button
+                data-testid="button-preset-action"
+                size="sm"
+                variant="outline"
+                onClick={() => applyCameraPreset("action")}
+              >
+                Action
+              </Button>
+            </div>
+          </div>
+          <Button
+            data-testid="button-reset-camera"
+            size="sm"
+            variant="default"
+            onClick={resetCamera}
+            className="w-full"
+          >
+            Reset View
+          </Button>
         </Card>
 
         {/* Logo */}
