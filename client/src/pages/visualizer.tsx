@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Select, 
   SelectContent, 
@@ -201,6 +202,7 @@ export default function Visualizer() {
 
   const [homeRosterInput, setHomeRosterInput] = useState("");
   const [awayRosterInput, setAwayRosterInput] = useState("");
+  const [playerHotkeysInput, setPlayerHotkeysInput] = useState("");
   const [selectedCarrier, setSelectedCarrier] = useState("");
   const [logoImage, setLogoImage] = useState<HTMLImageElement | null>(null);
   const [homeEndzoneLogoImage, setHomeEndzoneLogoImage] = useState<HTMLImageElement | null>(null);
@@ -639,20 +641,20 @@ export default function Visualizer() {
     // Carrier label
     if (carrierNumber) {
       const hasName = state.carrierName && state.carrierName.trim() !== "";
-      const labelHeight = hasName ? 38 : 24;
-      const labelWidth = hasName ? Math.max(80, state.carrierName.length * 7) : 50;
+      const labelHeight = hasName ? 50 : 24;
+      const labelWidth = hasName ? Math.max(100, state.carrierName.length * 10) : 50;
       
       ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
       ctx.fillRect(ballX - labelWidth/2, ballY + 30, labelWidth, labelHeight);
       ctx.fillStyle = "#ffffff";
-      ctx.font = "600 14px 'JetBrains Mono'";
+      ctx.font = "600 16px 'JetBrains Mono'";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(`#${carrierNumber}`, ballX, ballY + (hasName ? 38 : 42));
+      ctx.fillText(`#${carrierNumber}`, ballX, ballY + (hasName ? 42 : 42));
       
       if (hasName) {
-        ctx.font = "400 11px 'JetBrains Mono'";
-        ctx.fillText(state.carrierName, ballX, ballY + 55);
+        ctx.font = "500 16px 'JetBrains Mono'";
+        ctx.fillText(state.carrierName, ballX, ballY + 62);
       }
     }
   };
@@ -1109,6 +1111,56 @@ export default function Visualizer() {
     return input.split(",").map(s => s.trim()).filter(s => s.length > 0);
   };
 
+  const loadPlayerHotkeys = () => {
+    const lines = playerHotkeysInput.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+    const newHotkeys: PlayerHotkey[] = [];
+    const errors: string[] = [];
+    const usedHotkeys = new Set<string>();
+
+    for (const line of lines) {
+      const parts = line.split(",").map(p => p.trim());
+      if (parts.length !== 3) {
+        errors.push(`Invalid format: "${line}" (expected: number, name, hotkey)`);
+        continue;
+      }
+
+      const [jersey, name, hotkey] = parts;
+      
+      // Validate jersey number
+      if (!jersey || jersey.length === 0) {
+        errors.push(`Missing jersey number in: "${line}"`);
+        continue;
+      }
+
+      // Validate hotkey
+      if (!hotkey || !/^[0-9a-z]$/.test(hotkey.toLowerCase())) {
+        errors.push(`Invalid hotkey "${hotkey}" (must be 0-9 or a-z)`);
+        continue;
+      }
+
+      // Check for duplicate hotkeys
+      if (usedHotkeys.has(hotkey.toLowerCase())) {
+        errors.push(`Duplicate hotkey "${hotkey}" in: "${line}"`);
+        continue;
+      }
+
+      usedHotkeys.add(hotkey.toLowerCase());
+      newHotkeys.push({ jersey, name, hotkey: hotkey.toLowerCase() });
+    }
+
+    if (errors.length > 0) {
+      toast({ 
+        description: `Errors found:\n${errors.join("\n")}`, 
+        variant: "destructive" 
+      });
+    }
+
+    if (newHotkeys.length > 0) {
+      setState(prev => ({ ...prev, playerHotkeys: newHotkeys }));
+      toast({ description: `Loaded ${newHotkeys.length} player hotkey(s)` });
+    }
+  };
+
   // Session functions
   const saveSession = () => {
     const session = { ...state };
@@ -1512,59 +1564,22 @@ export default function Visualizer() {
         {/* Player Hotkeys */}
         <Card className="p-4 space-y-3">
           <Label className="text-xs uppercase tracking-wide text-muted-foreground">Player Hotkeys</Label>
-          <div className="space-y-2">
-            {allRoster.map(jersey => {
-              const existing = state.playerHotkeys.find(h => h.jersey === jersey);
-              return (
-                <div key={jersey} className="flex gap-2 items-center">
-                  <span className="text-xs font-mono w-8">#{jersey}</span>
-                  <Input
-                    data-testid={`input-player-name-${jersey}`}
-                    placeholder="Name"
-                    value={existing?.name || ""}
-                    onChange={(e) => {
-                      const newHotkeys = state.playerHotkeys.filter(h => h.jersey !== jersey);
-                      if (e.target.value || existing?.hotkey) {
-                        newHotkeys.push({ jersey, name: e.target.value, hotkey: existing?.hotkey || "" });
-                      }
-                      setState(prev => ({ ...prev, playerHotkeys: newHotkeys }));
-                    }}
-                    className="flex-1 h-8 text-xs"
-                  />
-                  <Input
-                    data-testid={`input-player-hotkey-${jersey}`}
-                    placeholder="Key"
-                    value={existing?.hotkey || ""}
-                    onChange={(e) => {
-                      const key = e.target.value.slice(-1).toLowerCase();
-                      if (key && !/^[0-9a-z]$/.test(key)) {
-                        toast({ description: "Hotkey must be 0-9 or a-z", variant: "destructive" });
-                        return;
-                      }
-                      
-                      // Check for conflicts
-                      const conflict = state.playerHotkeys.find(h => h.jersey !== jersey && h.hotkey === key);
-                      if (conflict && key) {
-                        toast({ description: `Key '${key}' already used by #${conflict.jersey}`, variant: "destructive" });
-                        return;
-                      }
-                      
-                      const newHotkeys = state.playerHotkeys.filter(h => h.jersey !== jersey);
-                      if (key || existing?.name) {
-                        newHotkeys.push({ jersey, name: existing?.name || "", hotkey: key });
-                      }
-                      setState(prev => ({ ...prev, playerHotkeys: newHotkeys }));
-                      if (key && existing?.name) {
-                        toast({ description: `Hotkey '${key}' assigned to ${existing.name} (#${jersey})` });
-                      }
-                    }}
-                    maxLength={1}
-                    className="w-12 h-8 text-xs text-center"
-                  />
-                </div>
-              );
-            })}
-          </div>
+          <Textarea
+            data-testid="input-player-hotkeys"
+            placeholder="Format: number, name, hotkey&#10;Example:&#10;23, Jordan, q&#10;45, LeBron, w&#10;7, Durant, e"
+            value={playerHotkeysInput}
+            onChange={(e) => setPlayerHotkeysInput(e.target.value)}
+            className="text-xs font-mono min-h-[100px] resize-none"
+          />
+          <Button
+            data-testid="button-load-hotkeys"
+            size="sm"
+            variant="default"
+            onClick={loadPlayerHotkeys}
+            className="w-full"
+          >
+            Load Hotkeys
+          </Button>
           {state.playerHotkeys.length > 0 && (
             <div className="border-t pt-2">
               <div className="text-xs text-muted-foreground mb-1">Active Hotkeys:</div>
@@ -1582,7 +1597,10 @@ export default function Visualizer() {
             data-testid="button-clear-hotkeys"
             size="sm"
             variant="outline"
-            onClick={() => setState(prev => ({ ...prev, playerHotkeys: [] }))}
+            onClick={() => {
+              setState(prev => ({ ...prev, playerHotkeys: [] }));
+              setPlayerHotkeysInput("");
+            }}
             disabled={state.playerHotkeys.length === 0}
             className="w-full"
           >
