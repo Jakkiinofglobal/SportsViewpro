@@ -14,6 +14,12 @@ This is a pure client-side application (no backend) that provides a comprehensiv
   - Football: Play clock, quarter controls, down & distance tracking
   - Baseball: Ball/Strike/Out counter with automatic inning progression and runner tracking
 - **Home Team Logo**: Upload, resize, drag-and-drop positioning with presets
+- **Video Clip System**: Upload and playback 5 video clips per team for instant replays
+- **Play History Log**: Timestamped event tracking with scrollable history display
+- **Sound Effects**: Web Audio API-based scoring sounds, possession chimes, with volume controls
+- **Camera Controls**: Zoom (0.5x-3.0x), pan, and preset camera angles for dynamic views
+- **Game Stats Dashboard**: Real-time possession time, scoring runs, and analytics
+- **Export Functionality**: Download session data as JSON, play history as CSV
 - **Full Session Persistence**: Save/Load/New session management via localStorage
 - **Dark Sci-Fi HUD Theme**: Professional broadcast-quality interface with blue/gold accents
 
@@ -99,7 +105,62 @@ This is a pure client-side application (no backend) that provides a comprehensiv
   - Default position only applied if user hasn't positioned logo yet
 - **Persistence**: Logo position and scale saved in session (image file must be re-uploaded)
 
-### Session Management
+### Video Clip System
+- **Upload**: 5 video clips per team (Home/Away)
+- **File Support**: MP4, WebM, MOV formats
+- **Playback Modal**: Click play buttons to view clips in fullscreen dialog
+- **Video Controls**: Standard browser video player with play/pause/seek
+- **Quick Access**: Direct playback buttons for each clip slot
+- **Storage**: Video file URLs stored in session (files must be re-uploaded on reload)
+
+### Play History Log
+- **Event Tracking**: Automatic timestamped logging of:
+  - Score changes (team, points, new total)
+  - Possession changes
+  - Period/quarter/inning changes
+- **Display**: Scrollable event list with latest events at top
+- **Storage**: Maintains last 100 events
+- **Toggle View**: Show/Hide history panel
+- **Clear Function**: Reset history to start fresh
+- **Export**: Download complete history as CSV file
+
+### Sound Effects System
+- **Web Audio API**: Browser-native sound generation (no external audio files)
+- **Scoring Sounds**: Different tones for 1/2/3 point scores (C5/E5/G5 frequencies)
+- **Possession Sound**: Chime on possession change (A4 frequency)
+- **Clock Warning**: Low tone for final seconds (A3 frequency)
+- **Controls**:
+  - Sound ON/OFF toggle
+  - Volume slider (0-100%)
+  - Real-time volume adjustment
+- **Mute State**: Persists during session
+
+### Camera & Zoom Controls
+- **Zoom**: 0.5x to 3.0x magnification with slider control
+- **Pan Controls**: Arrow buttons (↑↓←→) for field navigation
+- **Presets**:
+  - Center: Default 1.0x zoom, centered view
+  - Wide: 0.8x zoom for full field overview
+  - Goal/Endzone/Home: Sport-specific close-up (2.0x zoom on key areas)
+  - Action: 1.5x zoom maintaining current pan position
+- **Reset View**: One-click return to default camera position
+- **Canvas Transform**: Applies ctx.translate/scale for smooth zoom/pan
+
+### Game Stats Dashboard
+- **Possession Time**: Live tracking of time each team holds possession
+  - Updates every second when game clock is running
+  - Separate counters for Home/Away teams
+  - Displays in MM:SS format
+- **Scoring Runs**: Tracks consecutive points by one team
+  - Shows current team on run and total points
+  - Resets when opposing team scores
+- **Scoring Summary**:
+  - Total number of scoring events per team
+  - Score history tracking
+- **Toggle Display**: Show/Hide stats panel
+- **Real-time Updates**: Stats update live during gameplay
+
+### Session Management & Export
 - **Save Session**: Stores complete game state to localStorage (key: msv:session)
   - Sport, clock states, speeds
   - Team names, rosters, scores, possession
@@ -108,8 +169,16 @@ This is a pure client-side application (no backend) that provides a comprehensiv
   - Baseball inning/half, B/S/O, runners
   - Ball position, trail setting
   - Logo position and scale
+  - Game stats (possession time, scoring data)
 - **Load Session**: Restores all saved state
 - **New Session**: Clears session and refreshes page
+- **Export Session (JSON)**: Download complete game data with stats
+  - Includes all game state, settings, and statistics
+  - Timestamped filename: `game-session-{timestamp}.json`
+- **Export History (CSV)**: Download play-by-play events
+  - CSV format: Timestamp, Type, Description
+  - Timestamped filename: `play-history-{timestamp}.csv`
+  - Disabled when no history events exist
 
 ## HUD Layout
 
@@ -128,7 +197,15 @@ This is a pure client-side application (no backend) that provides a comprehensiv
 
 ### Left Control Panel (320px fixed width)
 - Scrollable sections for all controls
-- Organized cards: Sport Switch, Teams, Scoreboard, Clocks, Sport Details, Logo, Session
+- Organized cards: 
+  - Sport Switch, Teams, Scoreboard, Clocks
+  - Sport Details (Basketball/Football/Baseball specific)
+  - Video Clips (5 slots per team)
+  - Carrier/At-Bat selection
+  - Ball Controls, Sound Effects, Camera & Zoom
+  - Logo positioning
+  - Game Stats, Play History
+  - Session management & Export
 - Dark sci-fi styling with blue/gold accents
 
 ### Right Stage Area
@@ -152,7 +229,16 @@ LocalStorage keys used:
 
 ## Recent Changes
 
-- 2025-10-15: Initial implementation with all three sport modes
+### 2025-10-16: Advanced Features Update
+- **Video Clip System**: Upload and playback 5 clips per team for instant replays
+- **Play History Log**: Timestamped event tracking with scrollable display and CSV export
+- **Sound Effects**: Web Audio API implementation with scoring sounds, possession chimes, volume controls
+- **Camera Controls**: Zoom (0.5x-3.0x), pan controls, and preset camera angles
+- **Game Stats Dashboard**: Real-time possession time tracking, scoring runs, and analytics
+- **Export Functionality**: JSON session export and CSV history export
+
+### 2025-10-15: Initial Implementation
+- Three complete sport modes (Basketball, Football, Baseball)
 - Complete game management system with persistence
 - Professional dark sci-fi HUD design with animations
 - Full keyboard and mouse controls for ball movement
