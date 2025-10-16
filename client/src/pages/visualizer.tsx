@@ -1214,7 +1214,9 @@ export default function Visualizer() {
       setState({
         ...data,
         homeVideoClips: data.homeVideoClips || [],
-        awayVideoClips: data.awayVideoClips || []
+        awayVideoClips: data.awayVideoClips || [],
+        basketballQuarter: data.basketballQuarter || 1,
+        quarter: data.quarter || 1
       });
       
       // Restore logo image if data URL exists
