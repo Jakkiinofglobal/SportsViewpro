@@ -1602,6 +1602,21 @@ export default function Visualizer() {
             </div>
           </div>
           
+          {/* Scoreboard */}
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <div className={`text-center ${state.possession === "home" ? "opacity-100" : "opacity-50"}`}>
+                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{state.homeTeam}</div>
+                <div data-testid="text-home-score" className="text-3xl font-bold font-mono">{state.homeScore}</div>
+              </div>
+              <div className="text-2xl text-muted-foreground">-</div>
+              <div className={`text-center ${state.possession === "away" ? "opacity-100" : "opacity-50"}`}>
+                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{state.awayTeam}</div>
+                <div data-testid="text-away-score" className="text-3xl font-bold font-mono">{state.awayScore}</div>
+              </div>
+            </div>
+          </div>
+          
           <div className="flex items-center gap-4">
             <div className="text-sm font-mono">
               {state.sport === "basketball" && "Q" + Math.ceil((720 - state.gameClockTime) / 180)}
