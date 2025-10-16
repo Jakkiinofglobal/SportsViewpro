@@ -12,6 +12,12 @@ import {
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type Sport = "basketball" | "football" | "baseball";
 type SpeedMultiplier = 0.75 | 1.0 | 1.25 | 1.5;
@@ -76,6 +82,10 @@ interface GameState {
   awayEndzoneLogoX: number;
   awayEndzoneLogoY: number;
   awayEndzoneLogoScale: number;
+  
+  // Video clips
+  homeVideoClips: string[];
+  awayVideoClips: string[];
 }
 
 export default function Visualizer() {
@@ -145,6 +155,8 @@ export default function Visualizer() {
     awayEndzoneLogoX: 1620,
     awayEndzoneLogoY: 540,
     awayEndzoneLogoScale: 0.4,
+    homeVideoClips: [],
+    awayVideoClips: [],
   });
 
   const [homeRosterInput, setHomeRosterInput] = useState("");
@@ -153,6 +165,7 @@ export default function Visualizer() {
   const [logoImage, setLogoImage] = useState<HTMLImageElement | null>(null);
   const [homeEndzoneLogoImage, setHomeEndzoneLogoImage] = useState<HTMLImageElement | null>(null);
   const [awayEndzoneLogoImage, setAwayEndzoneLogoImage] = useState<HTMLImageElement | null>(null);
+  const [playingVideo, setPlayingVideo] = useState<string | null>(null);
   const stateRef = useRef(state);
 
   // Load session on mount
@@ -161,7 +174,11 @@ export default function Visualizer() {
     if (saved) {
       try {
         const data = JSON.parse(saved);
-        setState(data);
+        setState({
+          ...data,
+          homeVideoClips: data.homeVideoClips || [],
+          awayVideoClips: data.awayVideoClips || []
+        });
         setHomeRosterInput(data.homeRoster.join(", "));
         setAwayRosterInput(data.awayRoster.join(", "));
         
@@ -860,7 +877,11 @@ export default function Visualizer() {
     const saved = localStorage.getItem("msv:session");
     if (saved) {
       const data = JSON.parse(saved);
-      setState(data);
+      setState({
+        ...data,
+        homeVideoClips: data.homeVideoClips || [],
+        awayVideoClips: data.awayVideoClips || []
+      });
       setHomeRosterInput(data.homeRoster.join(", "));
       setAwayRosterInput(data.awayRoster.join(", "));
       
@@ -981,6 +1002,43 @@ export default function Visualizer() {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  // Video clip handlers
+  const handleVideoUpload = (team: "home" | "away", index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('video/')) {
+        toast({ description: "Please select a valid video file", variant: "destructive" });
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataURL = event.target?.result as string;
+        setState(prev => {
+          const clips = team === "home" ? [...prev.homeVideoClips] : [...prev.awayVideoClips];
+          clips[index] = dataURL;
+          return {
+            ...prev,
+            [team === "home" ? "homeVideoClips" : "awayVideoClips"]: clips
+          };
+        });
+        toast({ description: `Video ${index + 1} uploaded for ${team} team` });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  const removeVideoClip = (team: "home" | "away", index: number) => {
+    setState(prev => {
+      const clips = team === "home" ? [...prev.homeVideoClips] : [...prev.awayVideoClips];
+      clips[index] = "";
+      return {
+        ...prev,
+        [team === "home" ? "homeVideoClips" : "awayVideoClips"]: clips
+      };
+    });
   };
 
   // Format time
@@ -1622,6 +1680,91 @@ export default function Visualizer() {
           </>
         )}
 
+        {/* Video Clips */}
+        <Card className="p-4 space-y-3">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Video Clips</Label>
+          
+          <div className="space-y-3">
+            <div>
+              <div className="text-sm font-medium mb-2">{state.homeTeam} Team</div>
+              <div className="space-y-2">
+                {[0, 1, 2, 3, 4].map(index => (
+                  <div key={`home-${index}`} className="flex gap-2 items-center">
+                    <div className="flex-1 flex gap-2">
+                      <Input
+                        type="file"
+                        accept="video/*"
+                        onChange={(e) => handleVideoUpload("home", index, e)}
+                        className="text-xs"
+                        data-testid={`input-home-video-${index}`}
+                      />
+                      {state.homeVideoClips?.[index] && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() => setPlayingVideo(state.homeVideoClips[index])}
+                            data-testid={`button-play-home-${index}`}
+                          >
+                            Play
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => removeVideoClip("home", index)}
+                            data-testid={`button-remove-home-${index}`}
+                          >
+                            ✕
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-sm font-medium mb-2">{state.awayTeam} Team</div>
+              <div className="space-y-2">
+                {[0, 1, 2, 3, 4].map(index => (
+                  <div key={`away-${index}`} className="flex gap-2 items-center">
+                    <div className="flex-1 flex gap-2">
+                      <Input
+                        type="file"
+                        accept="video/*"
+                        onChange={(e) => handleVideoUpload("away", index, e)}
+                        className="text-xs"
+                        data-testid={`input-away-video-${index}`}
+                      />
+                      {state.awayVideoClips?.[index] && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={() => setPlayingVideo(state.awayVideoClips[index])}
+                            data-testid={`button-play-away-${index}`}
+                          >
+                            Play
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => removeVideoClip("away", index)}
+                            data-testid={`button-remove-away-${index}`}
+                          >
+                            ✕
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Card>
+
         {/* Session */}
         <Card className="p-4 space-y-2">
           <Label className="text-xs uppercase tracking-wide text-muted-foreground">Session</Label>
@@ -1700,6 +1843,24 @@ export default function Visualizer() {
           </div>
         </div>
       </div>
+
+      {/* Video Player Modal */}
+      <Dialog open={!!playingVideo} onOpenChange={(open) => !open && setPlayingVideo(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Video Playback</DialogTitle>
+          </DialogHeader>
+          {playingVideo && (
+            <video
+              src={playingVideo}
+              controls
+              autoPlay
+              className="w-full rounded-lg"
+              data-testid="video-player"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
