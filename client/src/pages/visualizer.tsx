@@ -264,6 +264,34 @@ export default function Visualizer() {
     ctx.beginPath();
     ctx.arc(1720, 540, 400, Math.PI*2/3, Math.PI*4/3);
     ctx.stroke();
+    
+    // Basketball hoops
+    const drawHoop = (x: number, backboardX: number) => {
+      // Backboard
+      ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+      ctx.fillRect(backboardX - 5, 480, 10, 120);
+      
+      // Rim
+      ctx.strokeStyle = "#ff6600";
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.arc(x, 540, 25, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // Net lines
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(x + Math.cos(angle) * 25, 540 + Math.sin(angle) * 25);
+        ctx.lineTo(x + Math.cos(angle) * 20, 540 + 35);
+        ctx.stroke();
+      }
+    };
+    
+    drawHoop(180, 100);  // Left hoop
+    drawHoop(1740, 1820); // Right hoop
   };
 
   const drawFootballField = (ctx: CanvasRenderingContext2D) => {
@@ -296,6 +324,33 @@ export default function Visualizer() {
       }
       ctx.lineWidth = 4;
     }
+    
+    // Field goals at endzones
+    const drawFieldGoal = (x: number) => {
+      ctx.strokeStyle = "#ffcc00";
+      ctx.lineWidth = 8;
+      
+      // Uprights
+      ctx.beginPath();
+      ctx.moveTo(x, 200);
+      ctx.lineTo(x, 50);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(x, 880);
+      ctx.lineTo(x, 1030);
+      ctx.stroke();
+      
+      // Crossbar
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(x, 200);
+      ctx.lineTo(x, 880);
+      ctx.stroke();
+    };
+    
+    drawFieldGoal(100);  // Left endzone
+    drawFieldGoal(1820); // Right endzone
   };
 
   const drawBaseballField = (ctx: CanvasRenderingContext2D) => {
@@ -350,6 +405,16 @@ export default function Visualizer() {
     drawArrow(530, 440, 960, 210);
     drawArrow(960, 210, 1390, 470);
     drawArrow(1390, 440, 960, 870);
+    
+    // Pitcher's mound
+    ctx.fillStyle = "#a67c52";
+    ctx.beginPath();
+    ctx.arc(960, 670, 80, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Rubber (pitching plate)
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(945, 665, 30, 10);
   };
 
   const drawBall = (ctx: CanvasRenderingContext2D) => {
