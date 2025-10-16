@@ -58,6 +58,7 @@ interface GameState {
   ballVelY: number;
   ballTrail: boolean;
   ballAngle: number;
+  ballSize: number;
   
   // Logo
   logoX: number | null;
@@ -119,6 +120,7 @@ export default function Visualizer() {
     ballVelY: 0,
     ballTrail: false,
     ballAngle: 0,
+    ballSize: 30,
     logoX: null,
     logoY: null,
     logoScale: 0.5,
@@ -351,7 +353,7 @@ export default function Visualizer() {
   };
 
   const drawBall = (ctx: CanvasRenderingContext2D) => {
-    const { sport, carrierNumber } = state;
+    const { sport, carrierNumber, ballSize } = state;
     const ballX = ballPhysics.current.x;
     const ballY = ballPhysics.current.y;
     const ballAngle = ballPhysics.current.angle;
@@ -363,7 +365,7 @@ export default function Visualizer() {
       trailPoints.current.forEach(point => {
         ctx.fillStyle = `rgba(255, 255, 255, ${point.alpha * 0.3})`;
         ctx.beginPath();
-        ctx.arc(point.x, point.y, 8, 0, Math.PI * 2);
+        ctx.arc(point.x, point.y, ballSize * 0.4, 0, Math.PI * 2);
         ctx.fill();
       });
     }
@@ -385,7 +387,9 @@ export default function Visualizer() {
     // Ball shadow
     ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
     ctx.beginPath();
-    ctx.ellipse(5, 5, sport === "football" ? 25 : 20, sport === "football" ? 15 : 20, 0, 0, Math.PI * 2);
+    const shadowRadius = sport === "football" ? ballSize * 1.25 : ballSize;
+    const shadowHeight = sport === "football" ? ballSize * 0.75 : ballSize;
+    ctx.ellipse(5, 5, shadowRadius, shadowHeight, 0, 0, Math.PI * 2);
     ctx.fill();
     
     // Draw ball based on sport
@@ -393,23 +397,23 @@ export default function Visualizer() {
       // Orange basketball
       ctx.fillStyle = "#ff8c00";
       ctx.beginPath();
-      ctx.arc(0, 0, 20, 0, Math.PI * 2);
+      ctx.arc(0, 0, ballSize, 0, Math.PI * 2);
       ctx.fill();
       
       // Seams
       ctx.strokeStyle = "#000000";
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(0, 0, 20, Math.PI/4, Math.PI*3/4);
+      ctx.arc(0, 0, ballSize, Math.PI/4, Math.PI*3/4);
       ctx.stroke();
       ctx.beginPath();
-      ctx.arc(0, 0, 20, Math.PI*5/4, Math.PI*7/4);
+      ctx.arc(0, 0, ballSize, Math.PI*5/4, Math.PI*7/4);
       ctx.stroke();
     } else if (sport === "football") {
       // Brown football
       ctx.fillStyle = "#6b4423";
       ctx.beginPath();
-      ctx.ellipse(0, 0, 25, 15, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, ballSize * 1.25, ballSize * 0.75, 0, 0, Math.PI * 2);
       ctx.fill();
       
       // Laces
@@ -429,17 +433,17 @@ export default function Visualizer() {
       // White baseball
       ctx.fillStyle = "#ffffff";
       ctx.beginPath();
-      ctx.arc(0, 0, 18, 0, Math.PI * 2);
+      ctx.arc(0, 0, ballSize * 0.9, 0, Math.PI * 2);
       ctx.fill();
       
       // Red stitching
       ctx.strokeStyle = "#ff0000";
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.arc(0, 0, 15, 0.3, Math.PI - 0.3);
+      ctx.arc(0, 0, ballSize * 0.75, 0.3, Math.PI - 0.3);
       ctx.stroke();
       ctx.beginPath();
-      ctx.arc(0, 0, 15, Math.PI + 0.3, Math.PI * 2 - 0.3);
+      ctx.arc(0, 0, ballSize * 0.75, Math.PI + 0.3, Math.PI * 2 - 0.3);
       ctx.stroke();
     }
     
@@ -666,7 +670,7 @@ export default function Visualizer() {
       
       // Check ball drag
       const dist = Math.sqrt((x - ballPhysics.current.x) ** 2 + (y - ballPhysics.current.y) ** 2);
-      if (dist < 30) {
+      if (dist < state.ballSize + 10) {
         isDraggingBall.current = true;
       }
     };
@@ -1250,6 +1254,19 @@ export default function Visualizer() {
         {/* Ball Controls */}
         <Card className="p-4 space-y-3">
           <Label className="text-xs uppercase tracking-wide text-muted-foreground">Ball Controls</Label>
+          <div>
+            <Label className="text-xs">Ball Size</Label>
+            <Slider
+              data-testid="slider-ball-size"
+              value={[state.ballSize]}
+              onValueChange={([val]) => setState(prev => ({ ...prev, ballSize: val }))}
+              min={15}
+              max={50}
+              step={1}
+              className="mt-2"
+            />
+            <div className="text-xs text-muted-foreground text-center mt-1">{state.ballSize}px</div>
+          </div>
           <Button
             data-testid="button-toggle-trail"
             size="sm"
@@ -1306,6 +1323,20 @@ export default function Visualizer() {
             <Button data-testid="button-logo-bl" size="sm" variant="outline" onClick={() => setLogoPreset("bottom-left")}>BL</Button>
             <Button data-testid="button-logo-br" size="sm" variant="outline" onClick={() => setLogoPreset("bottom-right")}>BR</Button>
           </div>
+          <Button
+            data-testid="button-remove-logo"
+            size="sm"
+            variant="destructive"
+            onClick={() => {
+              setState(prev => ({ ...prev, logoX: null, logoY: null, logoDataURL: null }));
+              setLogoImage(null);
+              dragLogoMode.current = false;
+            }}
+            disabled={!state.logoDataURL}
+            className="w-full"
+          >
+            Remove Logo
+          </Button>
         </Card>
 
         {/* Session */}
