@@ -36,6 +36,7 @@ interface GameState {
   
   // Basketball
   shotClockTime: number;
+  basketballQuarter: number;
   
   // Football
   quarter: number;
@@ -114,6 +115,7 @@ export default function Visualizer() {
     gameClockRunning: false,
     speedMultiplier: 1.0,
     shotClockTime: 24.0,
+    basketballQuarter: 1,
     quarter: 1,
     down: 1,
     toGo: 10,
@@ -1170,14 +1172,24 @@ export default function Visualizer() {
 
         {/* Sport Timers */}
         {state.sport === "basketball" && (
-          <Card className="p-4 space-y-3">
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Shot Clock</Label>
-            <div data-testid="text-shot-clock" className="text-3xl font-mono font-bold text-center">{state.shotClockTime.toFixed(1)}</div>
-            <div className="flex gap-2">
-              <Button data-testid="button-shot-14" size="sm" variant="outline" onClick={() => setState(prev => ({ ...prev, shotClockTime: 14.0 }))} className="flex-1">24→14</Button>
-              <Button data-testid="button-shot-reset" size="sm" variant="outline" onClick={() => setState(prev => ({ ...prev, shotClockTime: 24.0 }))} className="flex-1">Reset 24</Button>
-            </div>
-          </Card>
+          <>
+            <Card className="p-4 space-y-3">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">Shot Clock</Label>
+              <div data-testid="text-shot-clock" className="text-3xl font-mono font-bold text-center">{state.shotClockTime.toFixed(1)}</div>
+              <div className="flex gap-2">
+                <Button data-testid="button-shot-14" size="sm" variant="outline" onClick={() => setState(prev => ({ ...prev, shotClockTime: 14.0 }))} className="flex-1">24→14</Button>
+                <Button data-testid="button-shot-reset" size="sm" variant="outline" onClick={() => setState(prev => ({ ...prev, shotClockTime: 24.0 }))} className="flex-1">Reset 24</Button>
+              </div>
+            </Card>
+            <Card className="p-4 space-y-3">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">Quarter</Label>
+              <div className="flex items-center justify-center gap-2">
+                <Button data-testid="button-basketball-quarter-down" size="sm" variant="outline" onClick={() => setState(prev => ({ ...prev, basketballQuarter: Math.max(1, prev.basketballQuarter - 1) }))}>Q−</Button>
+                <span data-testid="text-basketball-quarter" className="px-4 py-2 bg-muted rounded font-mono text-xl font-bold">{state.basketballQuarter}</span>
+                <Button data-testid="button-basketball-quarter-up" size="sm" variant="outline" onClick={() => setState(prev => ({ ...prev, basketballQuarter: Math.min(4, prev.basketballQuarter + 1) }))}>Q+</Button>
+              </div>
+            </Card>
+          </>
         )}
 
         {state.sport === "football" && (
@@ -1378,6 +1390,39 @@ export default function Visualizer() {
                 </Button>
               </div>
               <Button data-testid="button-clear-bases" size="sm" variant="outline" onClick={() => setState(prev => ({ ...prev, runners: { first: "", second: "", third: "" } }))} className="w-full">Clear Bases</Button>
+            </Card>
+            <Card className="p-4 space-y-3">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">Inning</Label>
+              <div className="flex items-center justify-center gap-2">
+                <Button 
+                  data-testid="button-inning-down" 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => setState(prev => ({ ...prev, inning: Math.max(1, prev.inning - 1) }))}
+                >
+                  −
+                </Button>
+                <span data-testid="text-inning" className="px-4 py-2 bg-muted rounded font-mono text-xl font-bold">
+                  {state.inningHalf === "top" ? "▲" : "▼"} {state.inning}
+                </span>
+                <Button 
+                  data-testid="button-inning-up" 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => setState(prev => ({ ...prev, inning: prev.inning + 1 }))}
+                >
+                  +
+                </Button>
+              </div>
+              <Button
+                data-testid="button-toggle-inning-half"
+                size="sm"
+                variant="outline"
+                onClick={() => setState(prev => ({ ...prev, inningHalf: prev.inningHalf === "top" ? "bottom" : "top" }))}
+                className="w-full"
+              >
+                Toggle {state.inningHalf === "top" ? "Bottom" : "Top"}
+              </Button>
             </Card>
           </>
         )}
@@ -1619,7 +1664,7 @@ export default function Visualizer() {
           
           <div className="flex items-center gap-4">
             <div className="text-sm font-mono">
-              {state.sport === "basketball" && "Q" + Math.ceil((720 - state.gameClockTime) / 180)}
+              {state.sport === "basketball" && `Q${state.basketballQuarter}`}
               {state.sport === "football" && `Q${state.quarter}`}
               {state.sport === "baseball" && `${state.inningHalf === "top" ? "▲" : "▼"} ${state.inning}`}
             </div>
