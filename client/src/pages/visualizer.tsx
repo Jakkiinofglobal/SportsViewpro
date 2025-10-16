@@ -200,10 +200,8 @@ export default function Visualizer() {
     awayVideoClips: [],
   });
 
-  const [homeRosterInput, setHomeRosterInput] = useState("");
-  const [awayRosterInput, setAwayRosterInput] = useState("");
-  const [playerHotkeysInput, setPlayerHotkeysInput] = useState("");
-  const [selectedCarrier, setSelectedCarrier] = useState("");
+  const [homePlayersInput, setHomePlayersInput] = useState("");
+  const [awayPlayersInput, setAwayPlayersInput] = useState("");
   const [logoImage, setLogoImage] = useState<HTMLImageElement | null>(null);
   const [homeEndzoneLogoImage, setHomeEndzoneLogoImage] = useState<HTMLImageElement | null>(null);
   const [awayEndzoneLogoImage, setAwayEndzoneLogoImage] = useState<HTMLImageElement | null>(null);
@@ -264,8 +262,6 @@ export default function Visualizer() {
           },
           carrierName: data.carrierName || "",
         });
-        setHomeRosterInput(data.homeRoster.join(", "));
-        setAwayRosterInput(data.awayRoster.join(", "));
         
         // Sync ball physics refs
         ballPhysics.current.x = data.ballX;
@@ -1092,43 +1088,50 @@ export default function Visualizer() {
     toast({ description: `${type.toUpperCase()} team saved` });
   };
 
-  const loadTeam = (type: "home" | "away") => {
-    const saved = localStorage.getItem(`msv:${type}`);
-    if (saved) {
-      const data = JSON.parse(saved);
-      if (type === "home") {
-        setState(prev => ({ ...prev, homeTeam: data.name, homeRoster: data.roster }));
-        setHomeRosterInput(data.roster.join(", "));
-      } else {
-        setState(prev => ({ ...prev, awayTeam: data.name, awayRoster: data.roster }));
-        setAwayRosterInput(data.roster.join(", "));
-      }
-      toast({ description: `${type.toUpperCase()} team loaded` });
-    }
-  };
+  // Removed old loadTeam function - now using loadTeamPlayers with new format
 
   const parseRoster = (input: string): string[] => {
     return input.split(",").map(s => s.trim()).filter(s => s.length > 0);
   };
 
-  const loadPlayerHotkeys = () => {
-    const lines = playerHotkeysInput.split("\n").map(l => l.trim()).filter(l => l.length > 0);
-    const newHotkeys: PlayerHotkey[] = [];
+  const loadTeamPlayers = (team: "home" | "away") => {
+    const input = team === "home" ? homePlayersInput : awayPlayersInput;
+    const lines = input.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+    const roster: string[] = [];
+    const hotkeys: PlayerHotkey[] = [];
     const errors: string[] = [];
     const usedHotkeys = new Set<string>();
 
     for (const line of lines) {
-      const parts = line.split(",").map(p => p.trim());
-      if (parts.length !== 3) {
-        errors.push(`Invalid format: "${line}" (expected: number, name, hotkey)`);
+      // Format: "Name #number, hotkey" e.g., "Amen Thompson #1, q"
+      const commaIndex = line.lastIndexOf(",");
+      if (commaIndex === -1) {
+        errors.push(`Missing hotkey: "${line}" (expected format: Name #number, hotkey)`);
         continue;
       }
 
-      const [jersey, name, hotkey] = parts;
-      
+      const playerPart = line.substring(0, commaIndex).trim();
+      const hotkey = line.substring(commaIndex + 1).trim();
+
+      // Extract number from player part (look for #number)
+      const hashIndex = playerPart.lastIndexOf("#");
+      if (hashIndex === -1) {
+        errors.push(`Missing #number: "${line}" (expected format: Name #number, hotkey)`);
+        continue;
+      }
+
+      const name = playerPart.substring(0, hashIndex).trim();
+      const jersey = playerPart.substring(hashIndex + 1).trim();
+
       // Validate jersey number
       if (!jersey || jersey.length === 0) {
         errors.push(`Missing jersey number in: "${line}"`);
+        continue;
+      }
+
+      // Validate name
+      if (!name || name.length === 0) {
+        errors.push(`Missing player name in: "${line}"`);
         continue;
       }
 
@@ -1145,7 +1148,8 @@ export default function Visualizer() {
       }
 
       usedHotkeys.add(hotkey.toLowerCase());
-      newHotkeys.push({ jersey, name, hotkey: hotkey.toLowerCase() });
+      roster.push(jersey);
+      hotkeys.push({ jersey, name, hotkey: hotkey.toLowerCase() });
     }
 
     // All-or-nothing: if there are ANY errors, don't load anything
@@ -1157,10 +1161,43 @@ export default function Visualizer() {
       return;
     }
 
-    if (newHotkeys.length > 0) {
-      setState(prev => ({ ...prev, playerHotkeys: newHotkeys }));
-      toast({ description: `Loaded ${newHotkeys.length} player hotkey(s)` });
+    if (roster.length > 0) {
+      // Update roster
+      if (team === "home") {
+        setState(prev => ({ ...prev, homeRoster: roster }));
+      } else {
+        setState(prev => ({ ...prev, awayRoster: roster }));
+      }
+
+      // Update hotkeys (merge with existing hotkeys from other team)
+      setState(prev => {
+        const otherTeamHotkeys = prev.playerHotkeys.filter(h => 
+          team === "home" ? !roster.includes(h.jersey) : roster.includes(h.jersey)
+        );
+        return { ...prev, playerHotkeys: [...otherTeamHotkeys, ...hotkeys] };
+      });
+
+      toast({ description: `Loaded ${roster.length} ${team} player(s)` });
     }
+  };
+
+  const clearTeamPlayers = (team: "home" | "away") => {
+    if (team === "home") {
+      setState(prev => ({
+        ...prev,
+        homeRoster: [],
+        playerHotkeys: prev.playerHotkeys.filter(h => !prev.homeRoster.includes(h.jersey))
+      }));
+      setHomePlayersInput("");
+    } else {
+      setState(prev => ({
+        ...prev,
+        awayRoster: [],
+        playerHotkeys: prev.playerHotkeys.filter(h => !prev.awayRoster.includes(h.jersey))
+      }));
+      setAwayPlayersInput("");
+    }
+    toast({ description: `Cleared ${team} roster and hotkeys` });
   };
 
   // Session functions
@@ -1179,8 +1216,6 @@ export default function Visualizer() {
         homeVideoClips: data.homeVideoClips || [],
         awayVideoClips: data.awayVideoClips || []
       });
-      setHomeRosterInput(data.homeRoster.join(", "));
-      setAwayRosterInput(data.awayRoster.join(", "));
       
       // Restore logo image if data URL exists
       if (data.logoDataURL) {
@@ -1516,133 +1551,108 @@ export default function Visualizer() {
           </div>
         </Card>
 
-        {/* Teams */}
+        {/* Teams & Player Hotkeys */}
         <Card className="p-4 space-y-3">
-          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Teams</Label>
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Teams & Player Hotkeys</Label>
+          
+          {/* Home Team */}
           <div className="space-y-2">
             <Input
               data-testid="input-home-team"
-              placeholder="Home Team"
+              placeholder="Home Team Name"
               value={state.homeTeam}
               onChange={(e) => setState(prev => ({ ...prev, homeTeam: e.target.value }))}
+              className="font-semibold"
             />
-            <Input
-              data-testid="input-home-roster"
-              placeholder="Home Roster (1,2,3,...)"
-              value={homeRosterInput}
-              onChange={(e) => {
-                setHomeRosterInput(e.target.value);
-                setState(prev => ({ ...prev, homeRoster: parseRoster(e.target.value) }));
-              }}
+            <Textarea
+              data-testid="input-home-players"
+              placeholder="Format: Name #number, hotkey&#10;Example:&#10;Amen Thompson #1, q&#10;Fred VanVleet #5, w&#10;Jalen Green #4, e"
+              value={homePlayersInput}
+              onChange={(e) => setHomePlayersInput(e.target.value)}
+              className="text-xs font-mono min-h-[80px] resize-none"
             />
             <div className="flex gap-2">
-              <Button data-testid="button-save-home" size="sm" variant="outline" onClick={() => saveTeam("home")} className="flex-1">Save</Button>
-              <Button data-testid="button-load-home" size="sm" variant="outline" onClick={() => loadTeam("home")} className="flex-1">Load</Button>
+              <Button 
+                data-testid="button-load-home" 
+                size="sm" 
+                variant="default" 
+                onClick={() => loadTeamPlayers("home")} 
+                className="flex-1"
+              >
+                Load Home
+              </Button>
+              <Button 
+                data-testid="button-clear-home" 
+                size="sm" 
+                variant="outline" 
+                onClick={() => clearTeamPlayers("home")} 
+                className="flex-1"
+              >
+                Clear Home
+              </Button>
             </div>
           </div>
+
+          {/* Away Team */}
           <div className="space-y-2">
             <Input
               data-testid="input-away-team"
-              placeholder="Away Team"
+              placeholder="Away Team Name"
               value={state.awayTeam}
               onChange={(e) => setState(prev => ({ ...prev, awayTeam: e.target.value }))}
+              className="font-semibold"
             />
-            <Input
-              data-testid="input-away-roster"
-              placeholder="Away Roster (1,2,3,...)"
-              value={awayRosterInput}
-              onChange={(e) => {
-                setAwayRosterInput(e.target.value);
-                setState(prev => ({ ...prev, awayRoster: parseRoster(e.target.value) }));
-              }}
+            <Textarea
+              data-testid="input-away-players"
+              placeholder="Format: Name #number, hotkey&#10;Example:&#10;Stephen Curry #30, a&#10;Klay Thompson #11, s&#10;Draymond Green #23, d"
+              value={awayPlayersInput}
+              onChange={(e) => setAwayPlayersInput(e.target.value)}
+              className="text-xs font-mono min-h-[80px] resize-none"
             />
             <div className="flex gap-2">
-              <Button data-testid="button-save-away" size="sm" variant="outline" onClick={() => saveTeam("away")} className="flex-1">Save</Button>
-              <Button data-testid="button-load-away" size="sm" variant="outline" onClick={() => loadTeam("away")} className="flex-1">Load</Button>
+              <Button 
+                data-testid="button-load-away" 
+                size="sm" 
+                variant="default" 
+                onClick={() => loadTeamPlayers("away")} 
+                className="flex-1"
+              >
+                Load Away
+              </Button>
+              <Button 
+                data-testid="button-clear-away" 
+                size="sm" 
+                variant="outline" 
+                onClick={() => clearTeamPlayers("away")} 
+                className="flex-1"
+              >
+                Clear Away
+              </Button>
             </div>
           </div>
-        </Card>
 
-        {/* Player Hotkeys */}
-        <Card className="p-4 space-y-3">
-          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Player Hotkeys</Label>
-          <Textarea
-            data-testid="input-player-hotkeys"
-            placeholder="Format: number, name, hotkey&#10;Example:&#10;23, Jordan, q&#10;45, LeBron, w&#10;7, Durant, e"
-            value={playerHotkeysInput}
-            onChange={(e) => setPlayerHotkeysInput(e.target.value)}
-            className="text-xs font-mono min-h-[100px] resize-none"
-          />
-          <Button
-            data-testid="button-load-hotkeys"
-            size="sm"
-            variant="default"
-            onClick={loadPlayerHotkeys}
-            className="w-full"
-          >
-            Load Hotkeys
-          </Button>
+          {/* Active Hotkeys Display */}
           {state.playerHotkeys.length > 0 && (
             <div className="border-t pt-2">
               <div className="text-xs text-muted-foreground mb-1">Active Hotkeys:</div>
               <div className="text-xs space-y-1">
                 {state.playerHotkeys.filter(h => h.hotkey).map(h => (
                   <div key={h.jersey} className="flex justify-between">
-                    <span>{h.hotkey.toUpperCase()}</span>
-                    <span className="font-mono">#{h.jersey} {h.name}</span>
+                    <span className="font-bold">{h.hotkey.toUpperCase()}</span>
+                    <span className="font-mono">{h.name} #{h.jersey}</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
-          <Button
-            data-testid="button-clear-hotkeys"
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setState(prev => ({ ...prev, playerHotkeys: [] }));
-              setPlayerHotkeysInput("");
-            }}
-            disabled={state.playerHotkeys.length === 0}
-            className="w-full"
-          >
-            Clear All Hotkeys
-          </Button>
-        </Card>
 
-        {/* Ball Carrier */}
-        <Card className="p-4 space-y-3">
-          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Ball Carrier</Label>
-          <Select value={selectedCarrier} onValueChange={setSelectedCarrier}>
-            <SelectTrigger data-testid="select-carrier">
-              <SelectValue placeholder="Select Jersey #" />
-            </SelectTrigger>
-            <SelectContent>
-              {allRoster.map(num => (
-                <SelectItem key={num} value={num}>#{num}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            data-testid="button-set-carrier"
-            size="sm"
-            variant="default"
-            onClick={() => {
-              setState(prev => ({ ...prev, carrierNumber: selectedCarrier }));
-              // Auto-fill name if hotkey exists
-              const hotkey = state.playerHotkeys.find(h => h.jersey === selectedCarrier);
-              if (hotkey?.name) {
-                setState(prev => ({ ...prev, carrierName: hotkey.name }));
-              }
-            }}
-            disabled={!selectedCarrier}
-            className="w-full"
-          >
-            Make {state.sport === "baseball" ? "At-Bat" : "Ball Carrier"}
-          </Button>
+          {/* Current Carrier Display */}
           {state.carrierNumber && (
-            <div className="text-sm text-center text-muted-foreground">
-              Current: #{state.carrierNumber} {state.carrierName && `(${state.carrierName})`}
+            <div className="border-t pt-2">
+              <div className="text-xs text-muted-foreground mb-1">Current {state.sport === "baseball" ? "At-Bat" : "Ball Carrier"}:</div>
+              <div className="text-sm font-semibold text-center">
+                {state.carrierName} #{state.carrierNumber}
+              </div>
             </div>
           )}
         </Card>
