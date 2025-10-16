@@ -60,7 +60,7 @@ This is a pure client-side application (no backend) that provides a comprehensiv
   - Basketball: Orange ball with seams
   - Football: Brown ellipse with laces, rotates with movement
   - Baseball: White ball with red stitching
-- **Carrier Label**: Shows jersey number below ball when set
+- **Carrier Label**: Shows jersey number and player name below ball when set
 
 ### Game Controls
 - **Scoreboard**: Home/Away scores with +1/+2/+3 buttons (Baseball uses +1 only)
@@ -95,6 +95,29 @@ This is a pure client-side application (no backend) that provides a comprehensiv
 - Save/Load team data to localStorage (keys: msv:home, msv:away)
 - Dropdown to select ball carrier/at-bat from combined roster
 - "Make Ball Carrier/At-Bat" button to assign
+
+### Player Hotkey System
+- **Hotkey Assignment**: Assign keyboard shortcuts (0-9, a-z) to individual roster players
+- **Player Names**: Add custom names to jersey numbers for enhanced identification
+- **Quick Switching**: Press assigned hotkey to instantly set ball carrier
+- **Visual Display**: Current hotkey assignments shown in compact list format "KEY → #JERSEY (NAME)"
+- **Carrier Display**: Ball shows both jersey number and player name when carrier is set
+- **Persistence**: Player hotkeys and names saved in session
+- **Conflict Prevention**: Duplicate hotkey detection with warning notifications
+
+### Score Hotkeys
+- **Keyboard Shortcuts**: Assign hotkeys to all scoring buttons (+1, +2, +3 for home and away)
+- **Visual Indicators**: Assigned hotkeys displayed on buttons (e.g., "+1 (Q)")
+- **Quick Scoring**: Press hotkey to trigger score with full effects (sound, visual, stats)
+- **Full Integration**: Hotkey scoring includes goal lighting and play history logging
+
+### Goal Lighting Effect
+- **Visual Feedback**: Pulsing golden light effect when scoring (800ms duration)
+- **Sport-Specific**:
+  - Basketball: Lights up hoop/basket area
+  - Football: Lights up scoring endzone
+  - Baseball: Lights up home plate area
+- **Automatic Trigger**: Activates on all scoring actions (button click or hotkey)
 
 ### Home Logo Management
 - **Upload**: PNG/JPG file input
@@ -170,7 +193,10 @@ This is a pure client-side application (no backend) that provides a comprehensiv
   - Ball position, trail setting
   - Logo position and scale
   - Game stats (possession time, scoring data)
-- **Load Session**: Restores all saved state
+  - Player hotkeys (jersey, name, hotkey mappings)
+  - Score hotkeys (all 6 scoring buttons)
+  - Carrier name (for display under ball)
+- **Load Session**: Restores all saved state including hotkeys
 - **New Session**: Clears session and refreshes page
 - **Export Session (JSON)**: Download complete game data with stats
   - Includes all game state, settings, and statistics
@@ -197,11 +223,12 @@ This is a pure client-side application (no backend) that provides a comprehensiv
 
 ### Left Control Panel (320px fixed width)
 - Scrollable sections for all controls
-- Organized cards: 
-  - Sport Switch, Teams, Scoreboard, Clocks
+- Organized cards (optimized workflow order): 
+  - Sport Switch, Teams, Player Hotkeys (with names & shortcuts)
+  - Ball Carrier selection, Video Clips (5 slots per team)
+  - Basketball Shot Clock (Reset 24, 24→14)
+  - Scoreboard (with score hotkeys), Clocks
   - Sport Details (Basketball/Football/Baseball specific)
-  - Video Clips (5 slots per team)
-  - Carrier/At-Bat selection
   - Ball Controls, Sound Effects, Camera & Zoom
   - Logo positioning
   - Game Stats, Play History
@@ -228,6 +255,14 @@ LocalStorage keys used:
 - Responsive canvas with stable 1920×1080 logical coordinates
 
 ## Recent Changes
+
+### 2025-10-16: Hotkey System & UI Optimization
+- **Player Hotkey System**: Assign keyboard shortcuts (0-9, a-z) to roster players with custom names for instant ball carrier switching
+- **Score Hotkeys**: Keyboard shortcuts for all scoring buttons with visual indicators on buttons
+- **Goal Lighting Effect**: Pulsing golden light effect (800ms) on scoring - sport-specific rendering for basketball/football/baseball
+- **Enhanced Carrier Display**: Ball now shows both jersey number and player name
+- **UI Reorganization**: Optimized workflow - moved Player Hotkeys, Ball Carrier, Video Clips, and Shot Clock controls closer to Teams roster
+- **Session Persistence**: Player hotkeys, score hotkeys, and carrier names now saved in sessions
 
 ### 2025-10-16: Advanced Features Update
 - **Video Clip System**: Upload and playback 5 clips per team for instant replays
