@@ -89,22 +89,20 @@ This is a pure client-side application (no backend) that provides a comprehensiv
 - Advance buttons (1B/2B/3B) with automatic run scoring
 - Clear bases button
 
-### Team & Roster Management
-- Separate Home/Away team inputs
-- Roster entry via comma-separated jersey numbers
-- Save/Load team data to localStorage (keys: msv:home, msv:away)
-- Dropdown to select ball carrier/at-bat from combined roster
-- "Make Ball Carrier/At-Bat" button to assign
-
-### Player Hotkey System
-- **Bulk Loading**: Single text area for easy player data entry
-- **Format**: One player per line: `number, name, hotkey` (e.g., "23, Jordan, q")
+### Teams & Player Hotkeys (Unified System)
+- **Single Interface**: Consolidated card combines team management and player hotkey assignment
+- **Format**: One player per line: `Name #number, hotkey` (e.g., "Amen Thompson #1, q")
+- **Separate Home/Away Management**:
+  - Individual text areas for home and away teams
+  - Load button per team - validates and loads roster + hotkeys
+  - Clear button per team - removes roster and all associated hotkeys
 - **Quick Switching**: Press assigned hotkey to instantly set ball carrier
-- **Visual Display**: Current hotkey assignments shown in compact list format "KEY → #JERSEY (NAME)"
+- **Active Hotkeys Display**: Shows all loaded hotkeys in format "KEY → Name #number"
+- **Current Ball Carrier**: Displays selected carrier with name and number
 - **Carrier Display**: Ball shows both jersey number and player name (16px font) beneath ball
 - **Validation**: All-or-nothing approach - if any errors found, nothing loads
 - **Error Checking**: Validates format, hotkey characters (0-9, a-z), and prevents duplicates
-- **Persistence**: Player hotkeys and names saved in session
+- **Persistence**: Team rosters, player hotkeys, and names saved in session
 
 ### Score Hotkeys
 - **Keyboard Shortcuts**: Assign hotkeys to all scoring buttons (+1, +2, +3 for home and away)
@@ -225,8 +223,9 @@ This is a pure client-side application (no backend) that provides a comprehensiv
 ### Left Control Panel (320px fixed width)
 - Scrollable sections for all controls
 - Organized cards (optimized workflow order): 
-  - Sport Switch, Teams, Player Hotkeys (with names & shortcuts)
-  - Ball Carrier selection, Video Clips (5 slots per team)
+  - Sport Switch
+  - Teams & Player Hotkeys (unified interface with format "Name #number, hotkey")
+  - Video Clips (5 slots per team)
   - Basketball Shot Clock (Reset 24, 24→14)
   - Scoreboard (with score hotkeys), Clocks
   - Sport Details (Basketball/Football/Baseball specific)
@@ -244,9 +243,14 @@ This is a pure client-side application (no backend) that provides a comprehensiv
 ## Persistence Keys
 
 LocalStorage keys used:
-- `msv:home` - Home team (name + roster)
-- `msv:away` - Away team (name + roster)  
-- `msv:session` - Full session state (all game data except logo image file)
+- `msv:session` - Full session state including:
+  - Team names and rosters (home/away)
+  - Player hotkeys and names
+  - Score hotkeys
+  - All game data (sport, clocks, scores, ball position, etc.)
+  - Logo positions and scales
+  - Game stats and history
+  - Note: Logo image files must be re-uploaded on reload
 
 ## User Preferences
 
@@ -257,13 +261,16 @@ LocalStorage keys used:
 
 ## Recent Changes
 
-### 2025-10-16: Hotkey System & UI Optimization
-- **Player Hotkey System**: Assign keyboard shortcuts (0-9, a-z) to roster players with custom names for instant ball carrier switching
+### 2025-10-16: Unified Teams & Player Hotkeys System
+- **Consolidated Interface**: Combined Teams, Player Hotkeys, and Ball Carrier into single "Teams & Player Hotkeys" card
+- **Streamlined Format**: New format `Name #number, hotkey` (e.g., "Amen Thompson #1, q") for one-line player entry
+- **Separate Team Management**: Individual Load/Clear functions for home and away teams with independent text areas
+- **Active Hotkeys Display**: Shows all loaded hotkeys in format "KEY → Name #number"
+- **Current Ball Carrier**: Displays selected carrier beneath Active Hotkeys
+- **Enhanced Carrier Display**: Ball shows both jersey number (16px, bold) and player name (16px) beneath ball
 - **Score Hotkeys**: Keyboard shortcuts for all scoring buttons with visual indicators on buttons
-- **Goal Lighting Effect**: Pulsing golden light effect (800ms) on scoring - sport-specific rendering for basketball/football/baseball
-- **Enhanced Carrier Display**: Ball now shows both jersey number and player name
-- **UI Reorganization**: Optimized workflow - moved Player Hotkeys, Ball Carrier, Video Clips, and Shot Clock controls closer to Teams roster
-- **Session Persistence**: Player hotkeys, score hotkeys, and carrier names now saved in sessions
+- **Goal Lighting Effect**: Pulsing golden light effect (800ms) on scoring - sport-specific rendering
+- **Session Persistence**: All team data, hotkeys, and carrier names saved in sessions
 
 ### 2025-10-16: Advanced Features Update
 - **Video Clip System**: Upload and playback 5 clips per team for instant replays
