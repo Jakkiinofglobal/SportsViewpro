@@ -65,6 +65,16 @@ interface GameState {
   logoY: number | null;
   logoScale: number;
   logoDataURL: string | null;
+  
+  // Football endzone logos
+  homeEndzoneLogoDataURL: string | null;
+  homeEndzoneLogoX: number;
+  homeEndzoneLogoY: number;
+  homeEndzoneLogoScale: number;
+  awayEndzoneLogoDataURL: string | null;
+  awayEndzoneLogoX: number;
+  awayEndzoneLogoY: number;
+  awayEndzoneLogoScale: number;
 }
 
 export default function Visualizer() {
@@ -125,12 +135,22 @@ export default function Visualizer() {
     logoY: null,
     logoScale: 0.5,
     logoDataURL: null,
+    homeEndzoneLogoDataURL: null,
+    homeEndzoneLogoX: 300,
+    homeEndzoneLogoY: 540,
+    homeEndzoneLogoScale: 0.4,
+    awayEndzoneLogoDataURL: null,
+    awayEndzoneLogoX: 1620,
+    awayEndzoneLogoY: 540,
+    awayEndzoneLogoScale: 0.4,
   });
 
   const [homeRosterInput, setHomeRosterInput] = useState("");
   const [awayRosterInput, setAwayRosterInput] = useState("");
   const [selectedCarrier, setSelectedCarrier] = useState("");
   const [logoImage, setLogoImage] = useState<HTMLImageElement | null>(null);
+  const [homeEndzoneLogoImage, setHomeEndzoneLogoImage] = useState<HTMLImageElement | null>(null);
+  const [awayEndzoneLogoImage, setAwayEndzoneLogoImage] = useState<HTMLImageElement | null>(null);
   const stateRef = useRef(state);
 
   // Load session on mount
@@ -544,6 +564,24 @@ export default function Visualizer() {
     }
   };
 
+  const drawEndzoneLogos = (ctx: CanvasRenderingContext2D) => {
+    if (state.sport !== "football") return;
+    
+    // Home endzone logo
+    if (homeEndzoneLogoImage && state.homeEndzoneLogoDataURL) {
+      const w = homeEndzoneLogoImage.width * state.homeEndzoneLogoScale;
+      const h = homeEndzoneLogoImage.height * state.homeEndzoneLogoScale;
+      ctx.drawImage(homeEndzoneLogoImage, state.homeEndzoneLogoX - w/2, state.homeEndzoneLogoY - h/2, w, h);
+    }
+    
+    // Away endzone logo
+    if (awayEndzoneLogoImage && state.awayEndzoneLogoDataURL) {
+      const w = awayEndzoneLogoImage.width * state.awayEndzoneLogoScale;
+      const h = awayEndzoneLogoImage.height * state.awayEndzoneLogoScale;
+      ctx.drawImage(awayEndzoneLogoImage, state.awayEndzoneLogoX - w/2, state.awayEndzoneLogoY - h/2, w, h);
+    }
+  };
+
   const drawRunners = (ctx: CanvasRenderingContext2D) => {
     const { runners } = state;
     const bases = [
@@ -594,6 +632,9 @@ export default function Visualizer() {
     
     // Draw logo
     drawLogo(ctx);
+    
+    // Draw endzone logos (football only)
+    drawEndzoneLogos(ctx);
     
     // Update ball movement
     if (!isDraggingBall.current) {
@@ -832,6 +873,27 @@ export default function Visualizer() {
         setLogoImage(null);
       }
       
+      // Restore endzone logos
+      if (data.homeEndzoneLogoDataURL) {
+        const img = new Image();
+        img.onload = () => {
+          setHomeEndzoneLogoImage(img);
+        };
+        img.src = data.homeEndzoneLogoDataURL;
+      } else {
+        setHomeEndzoneLogoImage(null);
+      }
+      
+      if (data.awayEndzoneLogoDataURL) {
+        const img = new Image();
+        img.onload = () => {
+          setAwayEndzoneLogoImage(img);
+        };
+        img.src = data.awayEndzoneLogoDataURL;
+      } else {
+        setAwayEndzoneLogoImage(null);
+      }
+      
       toast({ description: "Session loaded" });
     }
   };
@@ -883,6 +945,40 @@ export default function Visualizer() {
       case "bottom-right": x = 1770; y = 980; break;
     }
     setState(prev => ({ ...prev, logoX: x, logoY: y }));
+  };
+
+  const handleHomeEndzoneLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataURL = event.target?.result as string;
+        const img = new Image();
+        img.onload = () => {
+          setHomeEndzoneLogoImage(img);
+          setState(prev => ({ ...prev, homeEndzoneLogoDataURL: dataURL }));
+        };
+        img.src = dataURL;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAwayEndzoneLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataURL = event.target?.result as string;
+        const img = new Image();
+        img.onload = () => {
+          setAwayEndzoneLogoImage(img);
+          setState(prev => ({ ...prev, awayEndzoneLogoDataURL: dataURL }));
+        };
+        img.src = dataURL;
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // Format time
@@ -1403,6 +1499,83 @@ export default function Visualizer() {
             Remove Logo
           </Button>
         </Card>
+
+        {/* Football Endzone Logos */}
+        {state.sport === "football" && (
+          <>
+            <Card className="p-4 space-y-3">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">Home Endzone Logo</Label>
+              <Input
+                data-testid="input-home-endzone-logo"
+                type="file"
+                accept="image/png,image/jpeg"
+                onChange={handleHomeEndzoneLogoUpload}
+              />
+              <div>
+                <Label className="text-xs">Size</Label>
+                <Slider
+                  data-testid="slider-home-endzone-size"
+                  value={[state.homeEndzoneLogoScale]}
+                  onValueChange={([val]) => setState(prev => ({ ...prev, homeEndzoneLogoScale: val }))}
+                  min={0.1}
+                  max={1.0}
+                  step={0.05}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground text-center mt-1">{(state.homeEndzoneLogoScale * 100).toFixed(0)}%</div>
+              </div>
+              <Button
+                data-testid="button-remove-home-endzone"
+                size="sm"
+                variant="destructive"
+                onClick={() => {
+                  setState(prev => ({ ...prev, homeEndzoneLogoDataURL: null }));
+                  setHomeEndzoneLogoImage(null);
+                }}
+                disabled={!state.homeEndzoneLogoDataURL}
+                className="w-full"
+              >
+                Remove
+              </Button>
+            </Card>
+
+            <Card className="p-4 space-y-3">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">Away Endzone Logo</Label>
+              <Input
+                data-testid="input-away-endzone-logo"
+                type="file"
+                accept="image/png,image/jpeg"
+                onChange={handleAwayEndzoneLogoUpload}
+              />
+              <div>
+                <Label className="text-xs">Size</Label>
+                <Slider
+                  data-testid="slider-away-endzone-size"
+                  value={[state.awayEndzoneLogoScale]}
+                  onValueChange={([val]) => setState(prev => ({ ...prev, awayEndzoneLogoScale: val }))}
+                  min={0.1}
+                  max={1.0}
+                  step={0.05}
+                  className="mt-2"
+                />
+                <div className="text-xs text-muted-foreground text-center mt-1">{(state.awayEndzoneLogoScale * 100).toFixed(0)}%</div>
+              </div>
+              <Button
+                data-testid="button-remove-away-endzone"
+                size="sm"
+                variant="destructive"
+                onClick={() => {
+                  setState(prev => ({ ...prev, awayEndzoneLogoDataURL: null }));
+                  setAwayEndzoneLogoImage(null);
+                }}
+                disabled={!state.awayEndzoneLogoDataURL}
+                className="w-full"
+              >
+                Remove
+              </Button>
+            </Card>
+          </>
+        )}
 
         {/* Session */}
         <Card className="p-4 space-y-2">
