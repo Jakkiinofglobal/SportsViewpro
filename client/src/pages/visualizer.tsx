@@ -181,8 +181,33 @@ export default function Visualizer() {
   const [cameraZoom, setCameraZoom] = useState(1.0);
   const [cameraPanX, setCameraPanX] = useState(0);
   const [cameraPanY, setCameraPanY] = useState(0);
+  const [showStats, setShowStats] = useState(false);
+  const [gameStats, setGameStats] = useState({
+    homePossessionTime: 0,
+    awayPossessionTime: 0,
+    homeScores: [] as number[],
+    awayScores: [] as number[],
+    lastScoreTeam: "",
+    consecutivePoints: 0,
+  });
   const audioContextRef = useRef<AudioContext | null>(null);
+  const possessionStartTime = useRef<number>(Date.now());
   const stateRef = useRef(state);
+
+  // Track possession time
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (state.gameClockRunning) {
+        setGameStats(prev => ({
+          ...prev,
+          homePossessionTime: state.possession === "home" ? prev.homePossessionTime + 1 : prev.homePossessionTime,
+          awayPossessionTime: state.possession === "away" ? prev.awayPossessionTime + 1 : prev.awayPossessionTime,
+        }));
+      }
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [state.gameClockRunning, state.possession]);
 
   // Load session on mount
   useEffect(() => {
@@ -1265,18 +1290,78 @@ export default function Visualizer() {
             <div className="flex items-center justify-between">
               <span className="text-sm font-mono">{state.homeTeam}</span>
               <div className="flex gap-1">
-                <Button data-testid="button-home-plus1" size="sm" variant="outline" onClick={() => { setState(prev => ({ ...prev, homeScore: prev.homeScore + 1 })); logEvent("score", `${state.homeTeam} +1 (${state.homeScore + 1})`); playScoringSound(1); }}>+1</Button>
-                {state.sport !== "baseball" && <Button data-testid="button-home-plus2" size="sm" variant="outline" onClick={() => { setState(prev => ({ ...prev, homeScore: prev.homeScore + 2 })); logEvent("score", `${state.homeTeam} +2 (${state.homeScore + 2})`); playScoringSound(2); }}>+2</Button>}
-                {state.sport !== "baseball" && <Button data-testid="button-home-plus3" size="sm" variant="outline" onClick={() => { setState(prev => ({ ...prev, homeScore: prev.homeScore + 3 })); logEvent("score", `${state.homeTeam} +3 (${state.homeScore + 3})`); playScoringSound(3); }}>+3</Button>}
+                <Button data-testid="button-home-plus1" size="sm" variant="outline" onClick={() => { 
+                  setState(prev => ({ ...prev, homeScore: prev.homeScore + 1 })); 
+                  logEvent("score", `${state.homeTeam} +1 (${state.homeScore + 1})`); 
+                  playScoringSound(1);
+                  setGameStats(prev => ({
+                    ...prev,
+                    homeScores: [...prev.homeScores, 1],
+                    consecutivePoints: prev.lastScoreTeam === "home" ? prev.consecutivePoints + 1 : 1,
+                    lastScoreTeam: "home"
+                  }));
+                }}>+1</Button>
+                {state.sport !== "baseball" && <Button data-testid="button-home-plus2" size="sm" variant="outline" onClick={() => { 
+                  setState(prev => ({ ...prev, homeScore: prev.homeScore + 2 })); 
+                  logEvent("score", `${state.homeTeam} +2 (${state.homeScore + 2})`); 
+                  playScoringSound(2);
+                  setGameStats(prev => ({
+                    ...prev,
+                    homeScores: [...prev.homeScores, 2],
+                    consecutivePoints: prev.lastScoreTeam === "home" ? prev.consecutivePoints + 2 : 2,
+                    lastScoreTeam: "home"
+                  }));
+                }}>+2</Button>}
+                {state.sport !== "baseball" && <Button data-testid="button-home-plus3" size="sm" variant="outline" onClick={() => { 
+                  setState(prev => ({ ...prev, homeScore: prev.homeScore + 3 })); 
+                  logEvent("score", `${state.homeTeam} +3 (${state.homeScore + 3})`); 
+                  playScoringSound(3);
+                  setGameStats(prev => ({
+                    ...prev,
+                    homeScores: [...prev.homeScores, 3],
+                    consecutivePoints: prev.lastScoreTeam === "home" ? prev.consecutivePoints + 3 : 3,
+                    lastScoreTeam: "home"
+                  }));
+                }}>+3</Button>}
               </div>
               <span data-testid="text-home-score" className="text-2xl font-display font-bold">{state.homeScore}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm font-mono">{state.awayTeam}</span>
               <div className="flex gap-1">
-                <Button data-testid="button-away-plus1" size="sm" variant="outline" onClick={() => { setState(prev => ({ ...prev, awayScore: prev.awayScore + 1 })); logEvent("score", `${state.awayTeam} +1 (${state.awayScore + 1})`); playScoringSound(1); }}>+1</Button>
-                {state.sport !== "baseball" && <Button data-testid="button-away-plus2" size="sm" variant="outline" onClick={() => { setState(prev => ({ ...prev, awayScore: prev.awayScore + 2 })); logEvent("score", `${state.awayTeam} +2 (${state.awayScore + 2})`); playScoringSound(2); }}>+2</Button>}
-                {state.sport !== "baseball" && <Button data-testid="button-away-plus3" size="sm" variant="outline" onClick={() => { setState(prev => ({ ...prev, awayScore: prev.awayScore + 3 })); logEvent("score", `${state.awayTeam} +3 (${state.awayScore + 3})`); playScoringSound(3); }}>+3</Button>}
+                <Button data-testid="button-away-plus1" size="sm" variant="outline" onClick={() => { 
+                  setState(prev => ({ ...prev, awayScore: prev.awayScore + 1 })); 
+                  logEvent("score", `${state.awayTeam} +1 (${state.awayScore + 1})`); 
+                  playScoringSound(1);
+                  setGameStats(prev => ({
+                    ...prev,
+                    awayScores: [...prev.awayScores, 1],
+                    consecutivePoints: prev.lastScoreTeam === "away" ? prev.consecutivePoints + 1 : 1,
+                    lastScoreTeam: "away"
+                  }));
+                }}>+1</Button>
+                {state.sport !== "baseball" && <Button data-testid="button-away-plus2" size="sm" variant="outline" onClick={() => { 
+                  setState(prev => ({ ...prev, awayScore: prev.awayScore + 2 })); 
+                  logEvent("score", `${state.awayTeam} +2 (${state.awayScore + 2})`); 
+                  playScoringSound(2);
+                  setGameStats(prev => ({
+                    ...prev,
+                    awayScores: [...prev.awayScores, 2],
+                    consecutivePoints: prev.lastScoreTeam === "away" ? prev.consecutivePoints + 2 : 2,
+                    lastScoreTeam: "away"
+                  }));
+                }}>+2</Button>}
+                {state.sport !== "baseball" && <Button data-testid="button-away-plus3" size="sm" variant="outline" onClick={() => { 
+                  setState(prev => ({ ...prev, awayScore: prev.awayScore + 3 })); 
+                  logEvent("score", `${state.awayTeam} +3 (${state.awayScore + 3})`); 
+                  playScoringSound(3);
+                  setGameStats(prev => ({
+                    ...prev,
+                    awayScores: [...prev.awayScores, 3],
+                    consecutivePoints: prev.lastScoreTeam === "away" ? prev.consecutivePoints + 3 : 3,
+                    lastScoreTeam: "away"
+                  }));
+                }}>+3</Button>}
               </div>
               <span data-testid="text-away-score" className="text-2xl font-display font-bold">{state.awayScore}</span>
             </div>
@@ -2015,6 +2100,57 @@ export default function Visualizer() {
               </div>
             </div>
           </div>
+        </Card>
+
+        {/* Game Stats */}
+        <Card className="p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Game Stats</Label>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => setShowStats(!showStats)}
+              data-testid="button-toggle-stats"
+            >
+              {showStats ? "Hide" : "Show"}
+            </Button>
+          </div>
+          {showStats && (
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <div className="text-xs text-muted-foreground uppercase">Possession Time</div>
+                  <div className="font-mono text-primary">{state.homeTeam}</div>
+                  <div className="font-display font-bold">{formatTime(gameStats.homePossessionTime)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground uppercase">Possession Time</div>
+                  <div className="font-mono text-secondary">{state.awayTeam}</div>
+                  <div className="font-display font-bold">{formatTime(gameStats.awayPossessionTime)}</div>
+                </div>
+              </div>
+              <div className="border-t pt-2">
+                <div className="text-xs text-muted-foreground uppercase mb-1">Current Run</div>
+                <div className="font-display font-bold text-accent">
+                  {gameStats.consecutivePoints > 0 && `${gameStats.lastScoreTeam === "home" ? state.homeTeam : state.awayTeam}: ${gameStats.consecutivePoints} pts`}
+                  {gameStats.consecutivePoints === 0 && "No active run"}
+                </div>
+              </div>
+              <div className="border-t pt-2">
+                <div className="text-xs text-muted-foreground uppercase mb-1">Scoring Summary</div>
+                <div className="space-y-1">
+                  <div className="flex justify-between">
+                    <span className="font-mono text-sm">{state.homeTeam}</span>
+                    <span className="font-display">{gameStats.homeScores.length} scores</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-mono text-sm">{state.awayTeam}</span>
+                    <span className="font-display">{gameStats.awayScores.length} scores</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </Card>
 
         {/* Play History */}
