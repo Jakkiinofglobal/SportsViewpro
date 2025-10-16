@@ -17,6 +17,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 
 type Sport = "basketball" | "football" | "baseball";
@@ -2336,15 +2337,29 @@ export default function Visualizer() {
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Video Playback</DialogTitle>
+            <DialogDescription>Playing video clip. Click the button below or press ESC to return to game.</DialogDescription>
           </DialogHeader>
           {playingVideo && (
-            <video
-              src={playingVideo}
-              controls
-              autoPlay
-              className="w-full rounded-lg"
-              data-testid="video-player"
-            />
+            <div className="space-y-4">
+              <video
+                src={playingVideo}
+                controls
+                autoPlay
+                className="w-full rounded-lg"
+                data-testid="video-player"
+                onEnded={() => setPlayingVideo(null)}
+              />
+              <div className="flex justify-end">
+                <Button
+                  data-testid="button-close-video"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setPlayingVideo(null)}
+                >
+                  Return to Game
+                </Button>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>
