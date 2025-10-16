@@ -97,13 +97,14 @@ This is a pure client-side application (no backend) that provides a comprehensiv
 - "Make Ball Carrier/At-Bat" button to assign
 
 ### Player Hotkey System
-- **Hotkey Assignment**: Assign keyboard shortcuts (0-9, a-z) to individual roster players
-- **Player Names**: Add custom names to jersey numbers for enhanced identification
+- **Bulk Loading**: Single text area for easy player data entry
+- **Format**: One player per line: `number, name, hotkey` (e.g., "23, Jordan, q")
 - **Quick Switching**: Press assigned hotkey to instantly set ball carrier
 - **Visual Display**: Current hotkey assignments shown in compact list format "KEY → #JERSEY (NAME)"
-- **Carrier Display**: Ball shows both jersey number and player name when carrier is set
+- **Carrier Display**: Ball shows both jersey number and player name (16px font) beneath ball
+- **Validation**: All-or-nothing approach - if any errors found, nothing loads
+- **Error Checking**: Validates format, hotkey characters (0-9, a-z), and prevents duplicates
 - **Persistence**: Player hotkeys and names saved in session
-- **Conflict Prevention**: Duplicate hotkey detection with warning notifications
 
 ### Score Hotkeys
 - **Keyboard Shortcuts**: Assign hotkeys to all scoring buttons (+1, +2, +3 for home and away)
