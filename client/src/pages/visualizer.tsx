@@ -176,6 +176,9 @@ export default function Visualizer() {
   const [playingVideo, setPlayingVideo] = useState<string | null>(null);
   const [playHistory, setPlayHistory] = useState<PlayEvent[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [volume, setVolume] = useState(0.5);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const stateRef = useRef(state);
 
   // Load session on mount
@@ -1051,6 +1054,44 @@ export default function Visualizer() {
     });
   };
 
+  // Sound effects using Web Audio API
+  const playSound = (frequency: number, duration: number = 0.15) => {
+    if (!soundEnabled || volume === 0) return;
+    
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    
+    const ctx = audioContextRef.current;
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    oscillator.frequency.value = frequency;
+    oscillator.type = 'sine';
+    
+    gainNode.gain.setValueAtTime(volume * 0.3, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+    
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + duration);
+  };
+  
+  const playScoringSound = (points: number) => {
+    const frequencies = { 1: 523, 2: 659, 3: 784 }; // C5, E5, G5
+    playSound(frequencies[points as keyof typeof frequencies] || 523, 0.2);
+  };
+  
+  const playPossessionSound = () => {
+    playSound(440, 0.1); // A4
+  };
+  
+  const playClockWarningSound = () => {
+    playSound(220, 0.1); // A3 (lower pitch for warning)
+  };
+
   // Event logging
   const logEvent = (type: PlayEvent["type"], description: string, gameState?: Partial<GameState>) => {
     const event: PlayEvent = {
@@ -1169,18 +1210,18 @@ export default function Visualizer() {
             <div className="flex items-center justify-between">
               <span className="text-sm font-mono">{state.homeTeam}</span>
               <div className="flex gap-1">
-                <Button data-testid="button-home-plus1" size="sm" variant="outline" onClick={() => { setState(prev => ({ ...prev, homeScore: prev.homeScore + 1 })); logEvent("score", `${state.homeTeam} +1 (${state.homeScore + 1})`); }}>+1</Button>
-                {state.sport !== "baseball" && <Button data-testid="button-home-plus2" size="sm" variant="outline" onClick={() => { setState(prev => ({ ...prev, homeScore: prev.homeScore + 2 })); logEvent("score", `${state.homeTeam} +2 (${state.homeScore + 2})`); }}>+2</Button>}
-                {state.sport !== "baseball" && <Button data-testid="button-home-plus3" size="sm" variant="outline" onClick={() => { setState(prev => ({ ...prev, homeScore: prev.homeScore + 3 })); logEvent("score", `${state.homeTeam} +3 (${state.homeScore + 3})`); }}>+3</Button>}
+                <Button data-testid="button-home-plus1" size="sm" variant="outline" onClick={() => { setState(prev => ({ ...prev, homeScore: prev.homeScore + 1 })); logEvent("score", `${state.homeTeam} +1 (${state.homeScore + 1})`); playScoringSound(1); }}>+1</Button>
+                {state.sport !== "baseball" && <Button data-testid="button-home-plus2" size="sm" variant="outline" onClick={() => { setState(prev => ({ ...prev, homeScore: prev.homeScore + 2 })); logEvent("score", `${state.homeTeam} +2 (${state.homeScore + 2})`); playScoringSound(2); }}>+2</Button>}
+                {state.sport !== "baseball" && <Button data-testid="button-home-plus3" size="sm" variant="outline" onClick={() => { setState(prev => ({ ...prev, homeScore: prev.homeScore + 3 })); logEvent("score", `${state.homeTeam} +3 (${state.homeScore + 3})`); playScoringSound(3); }}>+3</Button>}
               </div>
               <span data-testid="text-home-score" className="text-2xl font-display font-bold">{state.homeScore}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm font-mono">{state.awayTeam}</span>
               <div className="flex gap-1">
-                <Button data-testid="button-away-plus1" size="sm" variant="outline" onClick={() => { setState(prev => ({ ...prev, awayScore: prev.awayScore + 1 })); logEvent("score", `${state.awayTeam} +1 (${state.awayScore + 1})`); }}>+1</Button>
-                {state.sport !== "baseball" && <Button data-testid="button-away-plus2" size="sm" variant="outline" onClick={() => { setState(prev => ({ ...prev, awayScore: prev.awayScore + 2 })); logEvent("score", `${state.awayTeam} +2 (${state.awayScore + 2})`); }}>+2</Button>}
-                {state.sport !== "baseball" && <Button data-testid="button-away-plus3" size="sm" variant="outline" onClick={() => { setState(prev => ({ ...prev, awayScore: prev.awayScore + 3 })); logEvent("score", `${state.awayTeam} +3 (${state.awayScore + 3})`); }}>+3</Button>}
+                <Button data-testid="button-away-plus1" size="sm" variant="outline" onClick={() => { setState(prev => ({ ...prev, awayScore: prev.awayScore + 1 })); logEvent("score", `${state.awayTeam} +1 (${state.awayScore + 1})`); playScoringSound(1); }}>+1</Button>
+                {state.sport !== "baseball" && <Button data-testid="button-away-plus2" size="sm" variant="outline" onClick={() => { setState(prev => ({ ...prev, awayScore: prev.awayScore + 2 })); logEvent("score", `${state.awayTeam} +2 (${state.awayScore + 2})`); playScoringSound(2); }}>+2</Button>}
+                {state.sport !== "baseball" && <Button data-testid="button-away-plus3" size="sm" variant="outline" onClick={() => { setState(prev => ({ ...prev, awayScore: prev.awayScore + 3 })); logEvent("score", `${state.awayTeam} +3 (${state.awayScore + 3})`); playScoringSound(3); }}>+3</Button>}
               </div>
               <span data-testid="text-away-score" className="text-2xl font-display font-bold">{state.awayScore}</span>
             </div>
@@ -1215,6 +1256,7 @@ export default function Visualizer() {
                 const newPossession = prev.possession === "home" ? "away" : "home";
                 const newTeam = newPossession === "home" ? prev.homeTeam : prev.awayTeam;
                 logEvent("possession", `Possession: ${newTeam}`);
+                playPossessionSound();
                 const updates: Partial<GameState> = { possession: newPossession };
                 
                 if (prev.sport === "basketball") {
@@ -1572,6 +1614,34 @@ export default function Visualizer() {
           >
             Trail {state.ballTrail ? "ON" : "OFF"}
           </Button>
+        </Card>
+
+        {/* Sound Effects */}
+        <Card className="p-4 space-y-3">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Sound Effects</Label>
+          <Button
+            data-testid="button-toggle-sound"
+            size="sm"
+            variant={soundEnabled ? "default" : "outline"}
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            className="w-full"
+          >
+            Sound {soundEnabled ? "ON" : "OFF"}
+          </Button>
+          <div>
+            <Label className="text-xs">Volume</Label>
+            <Slider
+              data-testid="slider-volume"
+              value={[volume]}
+              onValueChange={([val]) => setVolume(val)}
+              min={0}
+              max={1}
+              step={0.1}
+              className="mt-2"
+              disabled={!soundEnabled}
+            />
+            <div className="text-xs text-muted-foreground text-center mt-1">{(volume * 100).toFixed(0)}%</div>
+          </div>
         </Card>
 
         {/* Logo */}
