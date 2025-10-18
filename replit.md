@@ -74,7 +74,7 @@ SportSight offers 5 pricing tiers with feature-based access control:
 
 | Plan ID | Name | Price | Sports | Clips | Hotkeys | Export |
 |---------|------|-------|--------|-------|---------|--------|
-| `demo` | Demo (Free) | $0 | 1 sport | 1 total | 2H + 2A (points +2/+3 only) | No |
+| `demo` | Demo (Free) | $0 | 1 sport | 1 total | 1H + 1A (points +2/+3 only) | No |
 | `studioMonthly` | Studio Monthly | $28.99/mo | 1 sport | 2 (1 home, 1 away) | 5H + 5A (all points) | Basic |
 | `plusMonthly` | Plus Monthly (Pro) | $39.99/mo | All sports | 10 clips | 10H + 10A (all points) | Full |
 | `creatorYearly` | Creator Yearly | $198.97/yr | All sports | 10 clips | 10H + 10A (all points) | Full |
@@ -177,6 +177,40 @@ UPDATE users SET is_admin = true WHERE email = 'your-email@example.com';
 
 ## Recent Changes
 
+### 2025-10-18: Complete Feature Gating System
+- **Upgrade Modal Component**: 
+  - PayPal integration with all 5 pricing tiers
+  - Automatic modal trigger when users hit plan limits
+  - Professional pricing cards with feature comparisons
+- **Plan Limits Hook** (`usePlanLimits`):
+  - Real-time plan validation based on user subscription
+  - Centralized feature access control logic
+  - Toast notifications for locked features
+- **Sport Switching**: 
+  - Demo/Studio users locked to selected sport
+  - Plus/Creator/Pro users can switch anytime
+  - Toast notification on restriction
+- **Video Clip Limits**:
+  - Demo: 1 clip total (across both teams)
+  - Studio: 2 clips (1 home, 1 away)
+  - Plus/Creator/Pro: 10 clips total
+  - Lock icons on upload buttons when at limit
+- **Player Hotkey Limits**:
+  - Demo: 1 hotkey per team (2 total)
+  - Studio: 5 hotkeys per team (10 total)
+  - Plus/Creator/Pro: 10 hotkeys per team (20 total)
+  - Validation on roster loading with error messages
+- **Score Hotkey Restrictions**:
+  - Demo: Only +2 and +3 hotkeys allowed (no +1)
+  - All other plans: All score hotkeys (+1, +2, +3)
+  - Disabled inputs with lock icons for restricted buttons
+- **Export Functionality**:
+  - Demo: No export allowed
+  - Studio: Basic export (CSV history)
+  - Plus/Creator/Pro: Full export (JSON session + CSV history)
+  - Export buttons disabled with upgrade prompts
+- **Testing**: Complete e2e test suite verified all feature restrictions
+
 ### 2025-10-18: Complete Backend Monetization System
 - **PostgreSQL Database**: Users, transactions, admin actions tables
 - **JWT Authentication**: Secure HTTP-only cookie-based auth system
@@ -192,7 +226,6 @@ UPDATE users SET is_admin = true WHERE email = 'your-email@example.com';
   - Protected routes requiring authentication
   - Admin dashboard at `/admin`
 - **API Routes**: RESTful backend with auth middleware
-- **Feature Gating**: Plan-based access control (ready for visualizer integration)
 
 ### 2025-10-16: Score Correction & Quarter Fix
 - Score correction buttons (-1) for both home and away teams
