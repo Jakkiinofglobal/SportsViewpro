@@ -1,0 +1,62 @@
+==> Downloading cache...
+==> Cloning from https://github.com/Jakkiinofglobal/SportsViewpro
+==> Checking out commit bddd4315f551f2eedad4c3e655b9b9e2f6359e7e in branch main
+==> Transferred 202MB in 8s. Extraction took 6s.
+==> Using Node.js version 22.16.0 (default)
+==> Docs on specifying a Node.js version: https://render.com/docs/node-version
+==> Running build command 'npm install --production=false && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist'...
+up to date, audited 534 packages in 2s
+65 packages are looking for funding
+  run `npm fund` for details
+8 vulnerabilities (3 low, 5 moderate)
+To address issues that do not require attention, run:
+  npm audit fix
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+Run `npm audit` for details.
+  dist/index.js  23.5kb
+⚡ Done in 6ms
+==> Uploading build...
+==> Uploaded in 6.2s. Compression took 4.4s
+==> Build successful 🎉
+==> Deploying...
+==> Running 'node dist/index.js'
+5:47:33 PM [express] serving on port 10000
+==> Your service is live 🎉
+==> 
+==> ///////////////////////////////////////////////////////////
+==> 
+==> Available at your primary URL https://sportsight-backend.onrender.com
+==> 
+==> ///////////////////////////////////////////////////////////
+5:48:22 PM [express] GET /api/auth/session 401 in 3ms :: {"error":"Authentication required"}
+5:49:28 PM [express] GET /api/auth/session 401 in 1ms :: {"error":"Authentication required"}
+5:50:31 PM [express] GET /api/auth/session 401 in 1ms :: {"error":"Authentication required"}
+Login error: error: relation "users" does not exist
+    at file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async NeonPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-serverless/session.js:76:20)
+    at async DbStorage.getUserByEmail (file:///opt/render/project/src/dist/index.js:148:20)
+    at async file:///opt/render/project/src/dist/index.js:386:20 {
+  length: 105,
+  severity: 'ERROR',
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+  position: '166',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1449',
+  routine: 'parserOpenTable'
+}
+5:50:36 PM [express] POST /api/auth/login 500 in 903ms :: {"error":"Login failed"}
+5:51:49 PM [express] GET /api/auth/session 401 in 0ms :: {"error":"Authentication required"}
+==> Detected service running on port 10000
+==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
