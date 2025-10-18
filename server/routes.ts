@@ -35,11 +35,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isAdmin: user.isAdmin,
       });
 
-      // Set cookie
+      // Set cookie (cross-domain compatible for Vercel + Render deployment)
       res.cookie("auth_token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        secure: true, // Required for sameSite: "none"
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       });
 
@@ -81,11 +81,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isAdmin: user.isAdmin,
       });
 
-      // Set cookie
+      // Set cookie (cross-domain compatible for Vercel + Render deployment)
       res.cookie("auth_token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        secure: true, // Required for sameSite: "none"
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         maxAge: 30 * 24 * 60 * 60 * 1000,
       });
 
