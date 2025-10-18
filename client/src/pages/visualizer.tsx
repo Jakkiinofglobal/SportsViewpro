@@ -270,6 +270,7 @@ export default function Visualizer() {
   const [showChartModal, setShowChartModal] = useState(false);
   const [pendingShotLocation, setPendingShotLocation] = useState<{ x: number; y: number } | null>(null);
   const [pendingPassStart, setPendingPassStart] = useState<{ x: number; y: number } | null>(null);
+  const [waitingForShotResult, setWaitingForShotResult] = useState(false);
   const [selectedTeamFilter, setSelectedTeamFilter] = useState<"home" | "away">("home");
   const [selectedPlayerFilter, setSelectedPlayerFilter] = useState<string>("all");
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -1068,12 +1069,20 @@ export default function Visualizer() {
         return;
       }
       
-      // NEW SYSTEM: Enter key logs shot/pass/hit at CURRENT BALL POSITION
-      // Shift+Enter = MADE/COMPLETED (green, add points/yards)
-      // Enter alone = MISSED/INCOMPLETE (red, no points/yards)
-      if (e.key === "Enter" && planLimits.canUseShotCharts) {
+      // TWO-STEP SYSTEM: 
+      // Step 1: Press Enter → Ready to log
+      // Step 2: Press M for made, X for missed
+      if (e.key === "Enter" && planLimits.canUseShotCharts && !waitingForShotResult) {
         e.preventDefault();
-        const made = e.shiftKey; // Shift = made/completed
+        setWaitingForShotResult(true);
+        toast({ description: "Ready to log shot - Press M for MADE or X for MISSED" });
+        return;
+      }
+      
+      // Step 2: User presses M (made) or X (missed)
+      if (waitingForShotResult && (e.key.toLowerCase() === "m" || e.key.toLowerCase() === "x")) {
+        e.preventDefault();
+        const made = e.key.toLowerCase() === "m";
         const currentState = stateRef.current;
         const currentTeam = currentState.possession;
         const ballX = ballPhysics.current.x;
@@ -1110,6 +1119,7 @@ export default function Visualizer() {
             };
           });
           
+          setWaitingForShotResult(false);
           toast({ 
             description: made 
               ? `${zone.zone} made! +${zone.points} pts for ${currentState.carrierName}` 
@@ -1118,18 +1128,26 @@ export default function Visualizer() {
           return;
         }
         
-        // FOOTBALL: Space=start, Control=pass, Alt=run
-        // TODO: Implement football yard tracking with modifiers
+        // FOOTBALL: TODO
         if (currentState.sport === "football") {
+          setWaitingForShotResult(false);
           toast({ description: "Football tracking coming soon!" });
           return;
         }
         
-        // BASEBALL: Need user input on logic
+        // BASEBALL: TODO
         if (currentState.sport === "baseball") {
+          setWaitingForShotResult(false);
           toast({ description: "Baseball tracking - what should this do?" });
           return;
         }
+      }
+      
+      // Cancel waiting if Escape is pressed
+      if (waitingForShotResult && e.key === "Escape") {
+        setWaitingForShotResult(false);
+        toast({ description: "Shot logging cancelled" });
+        return;
       }
       
       // Check for score hotkeys
@@ -3302,7 +3320,7 @@ export default function Visualizer() {
 
       {/* Chart Modal */}
       <Dialog open={showChartModal} onOpenChange={setShowChartModal}>
-        <DialogContent className="max-w-5xl max-h-[80vh]">
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {state.sport === "basketball" ? "Shot Chart" : 
@@ -3366,35 +3384,37 @@ export default function Visualizer() {
               const pct = filteredShots.length > 0 ? Math.round((made / filteredShots.length) * 100) : 0;
               
               return (
-                <div className="space-y-3">
-                  <div className="text-sm font-semibold bg-muted p-2 rounded">
+                <div className="space-y-4">
+                  <div className="text-base font-bold bg-muted p-3 rounded">
                     Total: {filteredShots.length} | Made: {made} | Missed: {missed} | FG%: {pct}%
                   </div>
-                  <div className="relative w-full bg-[#c19a6b] rounded" style={{ paddingBottom: "56.25%" }}>
+                  <div className="relative w-full bg-[#c19a6b] rounded shadow-lg" style={{ paddingBottom: "56.25%" }}>
                     <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1920 1080">
                       {/* Basketball court - matching actual court dimensions */}
-                      <rect x="100" y="100" width="1720" height="880" stroke="white" strokeWidth="4" fill="none"/>
-                      <line x1="960" y1="100" x2="960" y2="980" stroke="white" strokeWidth="4"/>
-                      <circle cx="960" cy="540" r="120" stroke="white" strokeWidth="4" fill="none"/>
+                      <rect x="100" y="100" width="1720" height="880" stroke="white" strokeWidth="8" fill="none"/>
+                      <line x1="960" y1="100" x2="960" y2="980" stroke="white" strokeWidth="8"/>
+                      <circle cx="960" cy="540" r="120" stroke="white" strokeWidth="8" fill="none"/>
                       {/* 3-point arcs */}
-                      <path d="M 200,540 A 400,400 0 0,1 200,300" stroke="white" strokeWidth="4" fill="none"/>
-                      <path d="M 200,540 A 400,400 0 0,0 200,780" stroke="white" strokeWidth="4" fill="none"/>
-                      <path d="M 1720,540 A 400,400 0 0,0 1720,300" stroke="white" strokeWidth="4" fill="none"/>
-                      <path d="M 1720,540 A 400,400 0 0,1 1720,780" stroke="white" strokeWidth="4" fill="none"/>
+                      <path d="M 200,540 A 400,400 0 0,1 200,300" stroke="white" strokeWidth="8" fill="none"/>
+                      <path d="M 200,540 A 400,400 0 0,0 200,780" stroke="white" strokeWidth="8" fill="none"/>
+                      <path d="M 1720,540 A 400,400 0 0,0 1720,300" stroke="white" strokeWidth="8" fill="none"/>
+                      <path d="M 1720,540 A 400,400 0 0,1 1720,780" stroke="white" strokeWidth="8" fill="none"/>
+                      {/* Free throw lanes */}
+                      <rect x="840" y="400" width="240" height="280" stroke="white" strokeWidth="6" fill="none"/>
                       {/* Hoops */}
-                      <circle cx="180" cy="540" r="25" stroke="#ff6600" strokeWidth="6" fill="none"/>
-                      <circle cx="1740" cy="540" r="25" stroke="#ff6600" strokeWidth="6" fill="none"/>
+                      <circle cx="180" cy="540" r="30" stroke="#ff6600" strokeWidth="8" fill="none"/>
+                      <circle cx="1740" cy="540" r="30" stroke="#ff6600" strokeWidth="8" fill="none"/>
                       {/* Shots */}
                       {filteredShots.map(shot => (
                         <circle
                           key={shot.id}
                           cx={shot.x}
                           cy={shot.y}
-                          r="15"
+                          r="20"
                           fill={shot.made ? "#22c55e" : "#ef4444"}
-                          opacity="0.7"
+                          opacity="0.8"
                           stroke="white"
-                          strokeWidth="2"
+                          strokeWidth="3"
                         />
                       ))}
                     </svg>
@@ -3416,17 +3436,17 @@ export default function Visualizer() {
               const compPct = filteredPasses.length > 0 ? Math.round((completed / filteredPasses.length) * 100) : 0;
               
               return (
-                <div className="space-y-3">
-                  <div className="text-sm font-semibold bg-muted p-2 rounded">
+                <div className="space-y-4">
+                  <div className="text-base font-bold bg-muted p-3 rounded">
                     Total: {filteredPasses.length} | Completed: {completed} | Comp%: {compPct}% | Avg: {avgDist} yds
                   </div>
-                  <div className="relative w-full bg-[#2d5016] rounded" style={{ paddingBottom: "56.25%" }}>
+                  <div className="relative w-full bg-[#2d5016] rounded shadow-lg" style={{ paddingBottom: "56.25%" }}>
                     <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1920 1080">
                       {/* Football field - matching actual field dimensions */}
-                      <rect x="100" y="200" width="1720" height="680" stroke="white" strokeWidth="4" fill="none"/>
+                      <rect x="100" y="200" width="1720" height="680" stroke="white" strokeWidth="8" fill="none"/>
                       {/* Yard lines */}
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => (
-                        <line key={i} x1={100 + i * 172} y1="200" x2={100 + i * 172} y2="880" stroke="white" strokeWidth="4"/>
+                        <line key={i} x1={100 + i * 172} y1="200" x2={100 + i * 172} y2="880" stroke="white" strokeWidth="6"/>
                       ))}
                       {/* Passes */}
                       {filteredPasses.map(pass => (
@@ -3437,10 +3457,10 @@ export default function Visualizer() {
                             x2={pass.endX}
                             y2={pass.endY}
                             stroke={pass.completed ? "#22c55e" : "#ef4444"}
-                            strokeWidth="3"
-                            opacity="0.7"
+                            strokeWidth="5"
+                            opacity="0.8"
                           />
-                          <circle cx={pass.endX} cy={pass.endY} r="10" fill={pass.completed ? "#22c55e" : "#ef4444"} opacity="0.8"/>
+                          <circle cx={pass.endX} cy={pass.endY} r="15" fill={pass.completed ? "#22c55e" : "#ef4444"} opacity="0.9"/>
                         </g>
                       ))}
                     </svg>
@@ -3463,11 +3483,11 @@ export default function Visualizer() {
               const outs = filteredHits.filter(h => h.result === "out").length;
               
               return (
-                <div className="space-y-3">
-                  <div className="text-sm font-semibold bg-muted p-2 rounded">
+                <div className="space-y-4">
+                  <div className="text-base font-bold bg-muted p-3 rounded">
                     Total: {filteredHits.length} | 1B: {singles} | 2B: {doubles} | 3B: {triples} | HR: {hrs} | Out: {outs}
                   </div>
-                  <div className="relative w-full bg-[#2d5016] rounded" style={{ paddingBottom: "56.25%" }}>
+                  <div className="relative w-full bg-[#2d5016] rounded shadow-lg" style={{ paddingBottom: "56.25%" }}>
                     <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1920 1080">
                       {/* Baseball field - matching actual field dimensions */}
                       {/* Dirt infield diamond */}
