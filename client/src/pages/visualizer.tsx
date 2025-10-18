@@ -3298,108 +3298,210 @@ export default function Visualizer() {
                state.sport === "football" ? "Pass Chart" : "Hit Chart"}
             </DialogTitle>
             <DialogDescription>
-              {state.sport === "basketball" ? "Green = Made | Red = Missed" :
-               state.sport === "football" ? "Green = Completed | Red = Incomplete" :
-               "Track where hits landed"}
+              Click team to see all shots, or select a player to see individual stats
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 overflow-y-auto max-h-[60vh]">
+            {/* Team and Player Filter Dropdowns */}
+            <div className="flex gap-4 items-end">
+              <div className="flex-1">
+                <Label className="text-xs mb-1">Team Filter</Label>
+                <Select value={selectedTeamFilter} onValueChange={(v: "home" | "away") => {
+                  setSelectedTeamFilter(v);
+                  setSelectedPlayerFilter("all");
+                }}>
+                  <SelectTrigger data-testid="select-team-filter">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="home">{state.homeTeam} (Home)</SelectItem>
+                    <SelectItem value="away">{state.awayTeam} (Away)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex-1">
+                <Label className="text-xs mb-1">Player Filter</Label>
+                <Select value={selectedPlayerFilter} onValueChange={setSelectedPlayerFilter}>
+                  <SelectTrigger data-testid="select-player-filter">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Players</SelectItem>
+                    {state.playerHotkeys
+                      .filter(h => {
+                        const isHomeTeam = state.homeRoster.includes(h.jersey);
+                        return selectedTeamFilter === "home" ? isHomeTeam : !isHomeTeam;
+                      })
+                      .map(h => (
+                        <SelectItem key={h.jersey} value={h.jersey}>
+                          {h.name} #{h.jersey}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
             {/* Basketball Shot Chart */}
-            {state.sport === "basketball" && (
-              <div className="space-y-3">
-                <div className="text-sm font-semibold">
-                  Total Shots: {state.basketballShots?.length || 0} | 
-                  Made: {state.basketballShots?.filter(s => s.made).length || 0} | 
-                  Missed: {state.basketballShots?.filter(s => !s.made).length || 0}
-                </div>
-                <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
-                  <svg className="absolute inset-0 w-full h-full border rounded" viewBox="0 0 1920 1080">
-                    <rect width="1920" height="1080" fill="#c19a6b"/>
-                    <rect x="260" y="80" width="1400" height="920" stroke="white" strokeWidth="4" fill="none"/>
-                    <circle cx="960" cy="540" r="72" stroke="white" strokeWidth="4" fill="none"/>
-                    {state.basketballShots?.map(shot => (
-                      <circle
-                        key={shot.id}
-                        cx={shot.x}
-                        cy={shot.y}
-                        r="15"
-                        fill={shot.made ? "#22c55e" : "#ef4444"}
-                        opacity="0.7"
-                        stroke="white"
-                        strokeWidth="2"
-                      />
-                    ))}
-                  </svg>
-                </div>
-              </div>
-            )}
-            
-            {/* Football Pass Chart */}
-            {state.sport === "football" && (
-              <div className="space-y-3">
-                <div className="text-sm font-semibold">
-                  Total Passes: {state.footballPasses?.length || 0} | 
-                  Completed: {state.footballPasses?.filter(p => p.completed).length || 0} |
-                  Avg Distance: {(state.footballPasses?.length || 0) > 0 ? 
-                    Math.round(state.footballPasses.reduce((sum, p) => sum + p.distance, 0) / state.footballPasses.length) : 0} yds
-                </div>
-                <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
-                  <svg className="absolute inset-0 w-full h-full border rounded" viewBox="0 0 1920 1080">
-                    <rect width="1920" height="1080" fill="#228B22"/>
-                    {state.footballPasses?.map(pass => (
-                      <g key={pass.id}>
-                        <line
-                          x1={pass.startX}
-                          y1={pass.startY}
-                          x2={pass.endX}
-                          y2={pass.endY}
-                          stroke={pass.completed ? "#22c55e" : "#ef4444"}
-                          strokeWidth="3"
-                          opacity="0.7"
-                        />
-                        <circle cx={pass.endX} cy={pass.endY} r="10" fill={pass.completed ? "#22c55e" : "#ef4444"} opacity="0.8"/>
-                      </g>
-                    ))}
-                  </svg>
-                </div>
-              </div>
-            )}
-            
-            {/* Baseball Hit Chart */}
-            {state.sport === "baseball" && (
-              <div className="space-y-3">
-                <div className="text-sm font-semibold">
-                  Total Hits: {state.baseballHits?.length || 0} | 
-                  Home Runs: {state.baseballHits?.filter(h => h.result === "hr").length || 0}
-                </div>
-                <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
-                  <svg className="absolute inset-0 w-full h-full border rounded" viewBox="0 0 1920 1080">
-                    <rect width="1920" height="1080" fill="#228B22"/>
-                    {state.baseballHits?.map(hit => {
-                      const colors = {
-                        single: "#22c55e",
-                        double: "#3b82f6",
-                        triple: "#a855f7",
-                        hr: "#f59e0b",
-                        out: "#ef4444"
-                      };
-                      return (
+            {state.sport === "basketball" && (() => {
+              const filteredShots = (state.basketballShots || []).filter(shot => {
+                if (shot.team !== selectedTeamFilter) return false;
+                if (selectedPlayerFilter !== "all" && shot.playerJersey !== selectedPlayerFilter) return false;
+                return true;
+              });
+              const made = filteredShots.filter(s => s.made).length;
+              const missed = filteredShots.filter(s => !s.made).length;
+              const pct = filteredShots.length > 0 ? Math.round((made / filteredShots.length) * 100) : 0;
+              
+              return (
+                <div className="space-y-3">
+                  <div className="text-sm font-semibold bg-muted p-2 rounded">
+                    Total: {filteredShots.length} | Made: {made} | Missed: {missed} | FG%: {pct}%
+                  </div>
+                  <div className="relative w-full bg-[#c19a6b] rounded" style={{ paddingBottom: "56.25%" }}>
+                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1920 1080">
+                      {/* Basketball court - matching actual court dimensions */}
+                      <rect x="100" y="100" width="1720" height="880" stroke="white" strokeWidth="4" fill="none"/>
+                      <line x1="960" y1="100" x2="960" y2="980" stroke="white" strokeWidth="4"/>
+                      <circle cx="960" cy="540" r="120" stroke="white" strokeWidth="4" fill="none"/>
+                      {/* 3-point arcs */}
+                      <path d="M 200,540 A 400,400 0 0,1 200,300" stroke="white" strokeWidth="4" fill="none"/>
+                      <path d="M 200,540 A 400,400 0 0,0 200,780" stroke="white" strokeWidth="4" fill="none"/>
+                      <path d="M 1720,540 A 400,400 0 0,0 1720,300" stroke="white" strokeWidth="4" fill="none"/>
+                      <path d="M 1720,540 A 400,400 0 0,1 1720,780" stroke="white" strokeWidth="4" fill="none"/>
+                      {/* Hoops */}
+                      <circle cx="180" cy="540" r="25" stroke="#ff6600" strokeWidth="6" fill="none"/>
+                      <circle cx="1740" cy="540" r="25" stroke="#ff6600" strokeWidth="6" fill="none"/>
+                      {/* Shots */}
+                      {filteredShots.map(shot => (
                         <circle
-                          key={hit.id}
-                          cx={hit.x}
-                          cy={hit.y}
+                          key={shot.id}
+                          cx={shot.x}
+                          cy={shot.y}
                           r="15"
-                          fill={colors[hit.result]}
+                          fill={shot.made ? "#22c55e" : "#ef4444"}
                           opacity="0.7"
                           stroke="white"
                           strokeWidth="2"
                         />
-                      );
-                    })}
-                  </svg>
+                      ))}
+                    </svg>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
+            
+            {/* Football Pass Chart */}
+            {state.sport === "football" && (() => {
+              const filteredPasses = (state.footballPasses || []).filter(pass => {
+                if (pass.team !== selectedTeamFilter) return false;
+                if (selectedPlayerFilter !== "all" && pass.playerJersey !== selectedPlayerFilter) return false;
+                return true;
+              });
+              const completed = filteredPasses.filter(p => p.completed).length;
+              const avgDist = filteredPasses.length > 0 ? 
+                Math.round(filteredPasses.reduce((sum, p) => sum + p.distance, 0) / filteredPasses.length) : 0;
+              const compPct = filteredPasses.length > 0 ? Math.round((completed / filteredPasses.length) * 100) : 0;
+              
+              return (
+                <div className="space-y-3">
+                  <div className="text-sm font-semibold bg-muted p-2 rounded">
+                    Total: {filteredPasses.length} | Completed: {completed} | Comp%: {compPct}% | Avg: {avgDist} yds
+                  </div>
+                  <div className="relative w-full bg-[#2d5016] rounded" style={{ paddingBottom: "56.25%" }}>
+                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1920 1080">
+                      {/* Football field - matching actual field dimensions */}
+                      <rect x="100" y="200" width="1720" height="680" stroke="white" strokeWidth="4" fill="none"/>
+                      {/* Yard lines */}
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => (
+                        <line key={i} x1={100 + i * 172} y1="200" x2={100 + i * 172} y2="880" stroke="white" strokeWidth="4"/>
+                      ))}
+                      {/* Passes */}
+                      {filteredPasses.map(pass => (
+                        <g key={pass.id}>
+                          <line
+                            x1={pass.startX}
+                            y1={pass.startY}
+                            x2={pass.endX}
+                            y2={pass.endY}
+                            stroke={pass.completed ? "#22c55e" : "#ef4444"}
+                            strokeWidth="3"
+                            opacity="0.7"
+                          />
+                          <circle cx={pass.endX} cy={pass.endY} r="10" fill={pass.completed ? "#22c55e" : "#ef4444"} opacity="0.8"/>
+                        </g>
+                      ))}
+                    </svg>
+                  </div>
+                </div>
+              );
+            })()}
+            
+            {/* Baseball Hit Chart */}
+            {state.sport === "baseball" && (() => {
+              const filteredHits = (state.baseballHits || []).filter(hit => {
+                if (hit.team !== selectedTeamFilter) return false;
+                if (selectedPlayerFilter !== "all" && hit.playerJersey !== selectedPlayerFilter) return false;
+                return true;
+              });
+              const singles = filteredHits.filter(h => h.result === "single").length;
+              const doubles = filteredHits.filter(h => h.result === "double").length;
+              const triples = filteredHits.filter(h => h.result === "triple").length;
+              const hrs = filteredHits.filter(h => h.result === "hr").length;
+              const outs = filteredHits.filter(h => h.result === "out").length;
+              
+              return (
+                <div className="space-y-3">
+                  <div className="text-sm font-semibold bg-muted p-2 rounded">
+                    Total: {filteredHits.length} | 1B: {singles} | 2B: {doubles} | 3B: {triples} | HR: {hrs} | Out: {outs}
+                  </div>
+                  <div className="relative w-full bg-[#2d5016] rounded" style={{ paddingBottom: "56.25%" }}>
+                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1920 1080">
+                      {/* Baseball field - matching actual field dimensions */}
+                      {/* Dirt infield diamond */}
+                      <path d="M 960,900 L 500,440 L 960,180 L 1420,440 Z" fill="#c19a6b"/>
+                      {/* Bases */}
+                      <rect x="945" y="885" width="30" height="30" fill="white"/>
+                      <rect x="485" y="425" width="30" height="30" fill="white"/>
+                      <rect x="945" y="165" width="30" height="30" fill="white"/>
+                      <rect x="1405" y="425" width="30" height="30" fill="white"/>
+                      {/* Pitcher's mound */}
+                      <circle cx="960" cy="670" r="80" fill="#a67c52"/>
+                      {/* Hits */}
+                      {filteredHits.map(hit => {
+                        const colors = {
+                          single: "#22c55e",
+                          double: "#3b82f6",
+                          triple: "#a855f7",
+                          hr: "#f59e0b",
+                          out: "#ef4444"
+                        };
+                        return (
+                          <circle
+                            key={hit.id}
+                            cx={hit.x}
+                            cy={hit.y}
+                            r="15"
+                            fill={colors[hit.result]}
+                            opacity="0.7"
+                            stroke="white"
+                            strokeWidth="2"
+                          />
+                        );
+                      })}
+                    </svg>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    <span className="inline-block w-3 h-3 rounded-full bg-[#22c55e] mr-1"></span>Single
+                    <span className="inline-block w-3 h-3 rounded-full bg-[#3b82f6] ml-3 mr-1"></span>Double
+                    <span className="inline-block w-3 h-3 rounded-full bg-[#a855f7] ml-3 mr-1"></span>Triple
+                    <span className="inline-block w-3 h-3 rounded-full bg-[#f59e0b] ml-3 mr-1"></span>HR
+                    <span className="inline-block w-3 h-3 rounded-full bg-[#ef4444] ml-3 mr-1"></span>Out
+                  </div>
+                </div>
+              );
+            })()}
             
             <div className="flex justify-end gap-2 pt-4">
               <Button
