@@ -263,6 +263,7 @@ export default function Visualizer() {
   const [logoImage, setLogoImage] = useState<HTMLImageElement | null>(null);
   const [homeEndzoneLogoImage, setHomeEndzoneLogoImage] = useState<HTMLImageElement | null>(null);
   const [awayEndzoneLogoImage, setAwayEndzoneLogoImage] = useState<HTMLImageElement | null>(null);
+  const [playerImages, setPlayerImages] = useState<Map<string, HTMLImageElement>>(new Map());
   const [playingVideo, setPlayingVideo] = useState<string | null>(null);
   const [playHistory, setPlayHistory] = useState<PlayEvent[]>([]);
   const [showHistory, setShowHistory] = useState(false);
@@ -353,6 +354,20 @@ export default function Visualizer() {
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  // Load player images when playerHotkeys change
+  useEffect(() => {
+    const newPlayerImages = new Map<string, HTMLImageElement>();
+    state.playerHotkeys.forEach(hotkey => {
+      if (hotkey.imageDataURL) {
+        const img = new Image();
+        img.onload = () => {
+          setPlayerImages(prev => new Map(prev).set(hotkey.jersey, img));
+        };
+        img.src = hotkey.imageDataURL;
+      }
+    });
+  }, [state.playerHotkeys]);
 
   // Throttled auto-save: save once per second using latest state from ref
   useEffect(() => {
@@ -706,23 +721,56 @@ export default function Visualizer() {
     
     ctx.restore();
     
-    // Carrier label
+    // Carrier label with player image
     if (carrierNumber) {
       const hasName = state.carrierName && state.carrierName.trim() !== "";
-      const labelHeight = hasName ? 50 : 24;
-      const labelWidth = hasName ? Math.max(100, state.carrierName.length * 10) : 50;
+      const playerImg = playerImages.get(carrierNumber);
+      const hasImage = !!playerImg;
       
+      const labelHeight = hasName ? 50 : 24;
+      const imageSize = 40;
+      const labelWidth = hasImage ? 
+        Math.max(150, (hasName ? state.carrierName.length * 10 : 50) + imageSize + 10) : 
+        (hasName ? Math.max(100, state.carrierName.length * 10) : 50);
+      
+      // Background
       ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
       ctx.fillRect(ballX - labelWidth/2, ballY + 30, labelWidth, labelHeight);
+      
+      // Player image (left side of label)
+      if (hasImage && playerImg) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(ballX - labelWidth/2 + imageSize/2 + 5, ballY + 30 + labelHeight/2, imageSize/2, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(
+          playerImg,
+          ballX - labelWidth/2 + 5,
+          ballY + 30 + (labelHeight - imageSize)/2,
+          imageSize,
+          imageSize
+        );
+        ctx.restore();
+        
+        // Image border
+        ctx.strokeStyle = "#3b82f6";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(ballX - labelWidth/2 + imageSize/2 + 5, ballY + 30 + labelHeight/2, imageSize/2, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      
+      // Text (shifted right if image exists)
+      const textX = hasImage ? ballX + 20 : ballX;
       ctx.fillStyle = "#ffffff";
       ctx.font = "600 16px 'JetBrains Mono'";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(`#${carrierNumber}`, ballX, ballY + (hasName ? 42 : 42));
+      ctx.fillText(`#${carrierNumber}`, textX, ballY + (hasName ? 42 : 42));
       
       if (hasName) {
         ctx.font = "500 16px 'JetBrains Mono'";
-        ctx.fillText(state.carrierName, ballX, ballY + 62);
+        ctx.fillText(state.carrierName, textX, ballY + 62);
       }
     }
   };
