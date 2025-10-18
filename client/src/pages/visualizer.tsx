@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { UpgradeModal } from "@/components/upgrade-modal";
 import { usePlanLimits } from "@/hooks/use-plan-limits";
-import { Lock, LogOut, Settings } from "lucide-react";
+import { Lock, LogOut, Settings, BarChart3, Upload } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
 type Sport = "basketball" | "football" | "baseball";
@@ -1000,6 +1000,61 @@ export default function Visualizer() {
           const newScore = (team === "home" ? prev.homeScore : prev.awayScore) + points;
           const teamName = team === "home" ? prev.homeTeam : prev.awayTeam;
           
+          // Track shot/pass/hit if pending location exists
+          let updatedState = { ...prev };
+          
+          if (planLimits.canUseShotCharts && pendingShotLocation && prev.sport === "basketball") {
+            const shot: ShotEvent = {
+              id: Date.now().toString(),
+              x: pendingShotLocation.x,
+              y: pendingShotLocation.y,
+              made: true,
+              playerName: prev.carrierName || "Unknown",
+              playerJersey: prev.carrierNumber || "00",
+              team,
+              timestamp: Date.now(),
+            };
+            updatedState.basketballShots = [...prev.basketballShots, shot];
+            setPendingShotLocation(null);
+          }
+          
+          if (planLimits.canUseShotCharts && pendingPassStart && prev.sport === "football") {
+            const dist = Math.sqrt(
+              Math.pow(ballPhysics.current.x - pendingPassStart.x, 2) +
+              Math.pow(ballPhysics.current.y - pendingPassStart.y, 2)
+            );
+            const pass: PassEvent = {
+              id: Date.now().toString(),
+              startX: pendingPassStart.x,
+              startY: pendingPassStart.y,
+              endX: ballPhysics.current.x,
+              endY: ballPhysics.current.y,
+              completed: true,
+              playerName: prev.carrierName || "Unknown",
+              playerJersey: prev.carrierNumber || "00",
+              team,
+              distance: Math.round(dist / 10),
+              timestamp: Date.now(),
+            };
+            updatedState.footballPasses = [...prev.footballPasses, pass];
+            setPendingPassStart(null);
+          }
+          
+          if (planLimits.canUseShotCharts && pendingShotLocation && prev.sport === "baseball") {
+            const hit: HitEvent = {
+              id: Date.now().toString(),
+              x: pendingShotLocation.x,
+              y: pendingShotLocation.y,
+              result: points === 1 ? "single" : points === 2 ? "double" : points === 3 ? "triple" : "hr",
+              playerName: prev.carrierName || "Unknown",
+              playerJersey: prev.carrierNumber || "00",
+              team,
+              timestamp: Date.now(),
+            };
+            updatedState.baseballHits = [...prev.baseballHits, hit];
+            setPendingShotLocation(null);
+          }
+          
           // Update game stats
           setGameStats(prevStats => ({
             ...prevStats,
@@ -1094,6 +1149,21 @@ export default function Visualizer() {
       const y = (e.clientY - rect.top) * scaleY;
       
       mousePos.current = { x, y };
+      
+      // Left click: Track shot location (if plan allows)
+      if (e.button === 0 && planLimits.canUseShotCharts) {
+        if (state.sport === "basketball") {
+          setPendingShotLocation({ x, y });
+        } else if (state.sport === "football") {
+          if (!pendingPassStart) {
+            setPendingPassStart({ x, y });
+          } else {
+            setPendingPassStart(null);
+          }
+        } else if (state.sport === "baseball") {
+          setPendingShotLocation({ x, y });
+        }
+      }
       
       // Check logo drag
       if (dragLogoMode.current && logoImage && state.logoX !== null && state.logoY !== null) {
@@ -2234,6 +2304,22 @@ export default function Visualizer() {
                 <Button data-testid="button-basketball-quarter-up" size="sm" variant="outline" onClick={() => setState(prev => ({ ...prev, basketballQuarter: Math.min(4, prev.basketballQuarter + 1) }))}>Q+</Button>
               </div>
             </Card>
+            <Button
+              data-testid="button-show-shot-chart"
+              size="sm"
+              variant="default"
+              onClick={() => {
+                if (!planLimits.canUseShotCharts) {
+                  showUpgrade("Shot Charts");
+                  return;
+                }
+                setShowChartModal(true);
+              }}
+              className="w-full flex items-center gap-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              {planLimits.canUseShotCharts ? "Shot Chart" : <><Lock className="h-3 w-3" /> Shot Chart</>}
+            </Button>
           </>
         )}
 
@@ -2274,6 +2360,22 @@ export default function Visualizer() {
                 </div>
               </div>
             </Card>
+            <Button
+              data-testid="button-show-pass-chart"
+              size="sm"
+              variant="default"
+              onClick={() => {
+                if (!planLimits.canUseShotCharts) {
+                  showUpgrade("Pass Charts");
+                  return;
+                }
+                setShowChartModal(true);
+              }}
+              className="w-full flex items-center gap-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              {planLimits.canUseShotCharts ? "Pass Chart" : <><Lock className="h-3 w-3" /> Pass Chart</>}
+            </Button>
           </>
         )}
 
@@ -2469,6 +2571,22 @@ export default function Visualizer() {
                 Toggle {state.inningHalf === "top" ? "Bottom" : "Top"}
               </Button>
             </Card>
+            <Button
+              data-testid="button-show-hit-chart"
+              size="sm"
+              variant="default"
+              onClick={() => {
+                if (!planLimits.canUseShotCharts) {
+                  showUpgrade("Hit Charts");
+                  return;
+                }
+                setShowChartModal(true);
+              }}
+              className="w-full flex items-center gap-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              {planLimits.canUseShotCharts ? "Hit Chart" : <><Lock className="h-3 w-3" /> Hit Chart</>}
+            </Button>
           </>
         )}
 
@@ -2988,6 +3106,141 @@ export default function Visualizer() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Chart Modal */}
+      <Dialog open={showChartModal} onOpenChange={setShowChartModal}>
+        <DialogContent className="max-w-5xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>
+              {state.sport === "basketball" ? "Shot Chart" : 
+               state.sport === "football" ? "Pass Chart" : "Hit Chart"}
+            </DialogTitle>
+            <DialogDescription>
+              {state.sport === "basketball" ? "Green = Made | Red = Missed" :
+               state.sport === "football" ? "Green = Completed | Red = Incomplete" :
+               "Track where hits landed"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 overflow-y-auto max-h-[60vh]">
+            {/* Basketball Shot Chart */}
+            {state.sport === "basketball" && (
+              <div className="space-y-3">
+                <div className="text-sm font-semibold">
+                  Total Shots: {state.basketballShots.length} | 
+                  Made: {state.basketballShots.filter(s => s.made).length} | 
+                  Missed: {state.basketballShots.filter(s => !s.made).length}
+                </div>
+                <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                  <svg className="absolute inset-0 w-full h-full border rounded" viewBox="0 0 1920 1080">
+                    <rect width="1920" height="1080" fill="#c19a6b"/>
+                    <rect x="260" y="80" width="1400" height="920" stroke="white" strokeWidth="4" fill="none"/>
+                    <circle cx="960" cy="540" r="72" stroke="white" strokeWidth="4" fill="none"/>
+                    {state.basketballShots.map(shot => (
+                      <circle
+                        key={shot.id}
+                        cx={shot.x}
+                        cy={shot.y}
+                        r="15"
+                        fill={shot.made ? "#22c55e" : "#ef4444"}
+                        opacity="0.7"
+                        stroke="white"
+                        strokeWidth="2"
+                      />
+                    ))}
+                  </svg>
+                </div>
+              </div>
+            )}
+            
+            {/* Football Pass Chart */}
+            {state.sport === "football" && (
+              <div className="space-y-3">
+                <div className="text-sm font-semibold">
+                  Total Passes: {state.footballPasses.length} | 
+                  Completed: {state.footballPasses.filter(p => p.completed).length} |
+                  Avg Distance: {state.footballPasses.length > 0 ? 
+                    Math.round(state.footballPasses.reduce((sum, p) => sum + p.distance, 0) / state.footballPasses.length) : 0} yds
+                </div>
+                <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                  <svg className="absolute inset-0 w-full h-full border rounded" viewBox="0 0 1920 1080">
+                    <rect width="1920" height="1080" fill="#228B22"/>
+                    {state.footballPasses.map(pass => (
+                      <g key={pass.id}>
+                        <line
+                          x1={pass.startX}
+                          y1={pass.startY}
+                          x2={pass.endX}
+                          y2={pass.endY}
+                          stroke={pass.completed ? "#22c55e" : "#ef4444"}
+                          strokeWidth="3"
+                          opacity="0.7"
+                        />
+                        <circle cx={pass.endX} cy={pass.endY} r="10" fill={pass.completed ? "#22c55e" : "#ef4444"} opacity="0.8"/>
+                      </g>
+                    ))}
+                  </svg>
+                </div>
+              </div>
+            )}
+            
+            {/* Baseball Hit Chart */}
+            {state.sport === "baseball" && (
+              <div className="space-y-3">
+                <div className="text-sm font-semibold">
+                  Total Hits: {state.baseballHits.length} | 
+                  Home Runs: {state.baseballHits.filter(h => h.result === "hr").length}
+                </div>
+                <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                  <svg className="absolute inset-0 w-full h-full border rounded" viewBox="0 0 1920 1080">
+                    <rect width="1920" height="1080" fill="#228B22"/>
+                    {state.baseballHits.map(hit => {
+                      const colors = {
+                        single: "#22c55e",
+                        double: "#3b82f6",
+                        triple: "#a855f7",
+                        hr: "#f59e0b",
+                        out: "#ef4444"
+                      };
+                      return (
+                        <circle
+                          key={hit.id}
+                          cx={hit.x}
+                          cy={hit.y}
+                          r="15"
+                          fill={colors[hit.result]}
+                          opacity="0.7"
+                          stroke="white"
+                          strokeWidth="2"
+                        />
+                      );
+                    })}
+                  </svg>
+                </div>
+              </div>
+            )}
+            
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (state.sport === "basketball") {
+                    setState(prev => ({ ...prev, basketballShots: [] }));
+                  } else if (state.sport === "football") {
+                    setState(prev => ({ ...prev, footballPasses: [] }));
+                  } else {
+                    setState(prev => ({ ...prev, baseballHits: [] }));
+                  }
+                }}
+              >
+                Clear Chart
+              </Button>
+              <Button onClick={() => setShowChartModal(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
