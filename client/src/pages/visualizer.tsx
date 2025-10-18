@@ -22,7 +22,8 @@ import {
 } from "@/components/ui/dialog";
 import { UpgradeModal } from "@/components/upgrade-modal";
 import { usePlanLimits } from "@/hooks/use-plan-limits";
-import { Lock } from "lucide-react";
+import { Lock, LogOut, Settings } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 
 type Sport = "basketball" | "football" | "baseball";
 type SpeedMultiplier = 0.75 | 1.0 | 1.25 | 1.5;
@@ -118,6 +119,7 @@ interface PlayEvent {
 }
 
 export default function Visualizer() {
+  const { user, logout } = useAuth();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const lastTimeRef = useRef<number>(0);
@@ -1590,6 +1592,40 @@ export default function Visualizer() {
     <div className="flex h-screen bg-background text-foreground">
       {/* Left Control Panel */}
       <div className="w-80 bg-card border-r border-card-border overflow-y-auto p-4 space-y-4">
+        {/* User Menu */}
+        <Card className="p-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-muted-foreground truncate">{user?.email}</div>
+              <div className="text-xs font-semibold text-primary uppercase">{user?.plan}</div>
+            </div>
+            <div className="flex gap-1">
+              {user?.isAdmin && (
+                <Button
+                  data-testid="button-admin"
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => window.location.href = "/admin"}
+                  title="Admin Dashboard"
+                  className="h-8 w-8"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              )}
+              <Button
+                data-testid="button-logout"
+                size="icon"
+                variant="ghost"
+                onClick={() => logout()}
+                title="Logout"
+                className="h-8 w-8"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </Card>
+
         {/* Sport Switcher */}
         <Card className="p-4">
           <Label className="text-xs uppercase tracking-wide text-muted-foreground mb-2 block">Sport</Label>
