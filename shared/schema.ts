@@ -79,6 +79,8 @@ export const PLANS = {
     clipsTotal: 1,
     hotkeys: { home: 1, away: 1, points: [2, 3] },
     export: false,
+    playerImages: false,
+    shotCharts: false,
   },
   studioMonthly: {
     id: "studioMonthly",
@@ -88,6 +90,8 @@ export const PLANS = {
     clipsTotal: 2,
     hotkeys: { home: 5, away: 5, points: [1, 2, 3] },
     export: "basic",
+    playerImages: false,
+    shotCharts: false,
   },
   plusMonthly: {
     id: "plusMonthly",
@@ -97,6 +101,8 @@ export const PLANS = {
     clipsTotal: 10,
     hotkeys: { home: 10, away: 10, points: [1, 2, 3] },
     export: "full",
+    playerImages: false,
+    shotCharts: true,
   },
   creatorYearly: {
     id: "creatorYearly",
@@ -106,6 +112,8 @@ export const PLANS = {
     clipsTotal: 10,
     hotkeys: { home: 10, away: 10, points: [1, 2, 3] },
     export: "full",
+    playerImages: true,
+    shotCharts: true,
   },
   proOneTime: {
     id: "proOneTime",
@@ -115,6 +123,8 @@ export const PLANS = {
     clipsTotal: 10,
     hotkeys: { home: 10, away: 10, points: [1, 2, 3] },
     export: "full",
+    playerImages: true,
+    shotCharts: true,
   },
 } as const;
 

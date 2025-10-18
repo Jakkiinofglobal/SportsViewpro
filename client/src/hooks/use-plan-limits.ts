@@ -13,6 +13,8 @@ export function usePlanLimits() {
       allowedScoreButtons: [] as number[],
       canExport: false,
       exportType: false as false | "basic" | "full",
+      canUsePlayerImages: false,
+      canUseShotCharts: false,
       planName: "None",
       currentPlan: "demo",
     };
@@ -28,6 +30,8 @@ export function usePlanLimits() {
     allowedScoreButtons: plan.hotkeys.points as unknown as number[],
     canExport: plan.export !== false,
     exportType: plan.export,
+    canUsePlayerImages: plan.playerImages,
+    canUseShotCharts: plan.shotCharts,
     planName: plan.name,
     currentPlan: user.plan,
   };

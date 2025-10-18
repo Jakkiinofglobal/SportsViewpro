@@ -32,6 +32,43 @@ interface PlayerHotkey {
   jersey: string;
   name: string;
   hotkey: string;
+  imageDataURL?: string;
+}
+
+interface ShotEvent {
+  id: string;
+  x: number;
+  y: number;
+  made: boolean;
+  playerName: string;
+  playerJersey: string;
+  team: "home" | "away";
+  timestamp: number;
+}
+
+interface PassEvent {
+  id: string;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  completed: boolean;
+  playerName: string;
+  playerJersey: string;
+  team: "home" | "away";
+  distance: number;
+  timestamp: number;
+}
+
+interface HitEvent {
+  id: string;
+  x: number;
+  y: number;
+  result: "single" | "double" | "triple" | "hr" | "out";
+  playerName: string;
+  playerJersey: string;
+  team: "home" | "away";
+  timestamp: number;
 }
 
 interface GameState {
@@ -108,6 +145,11 @@ interface GameState {
   // Video clips
   homeVideoClips: string[];
   awayVideoClips: string[];
+  
+  // Shot tracking
+  basketballShots: ShotEvent[];
+  footballPasses: PassEvent[];
+  baseballHits: HitEvent[];
 }
 
 interface PlayEvent {
@@ -211,6 +253,9 @@ export default function Visualizer() {
     awayEndzoneLogoScale: 0.4,
     homeVideoClips: [],
     awayVideoClips: [],
+    basketballShots: [],
+    footballPasses: [],
+    baseballHits: [],
   });
 
   const [homePlayersInput, setHomePlayersInput] = useState("");
@@ -221,6 +266,9 @@ export default function Visualizer() {
   const [playingVideo, setPlayingVideo] = useState<string | null>(null);
   const [playHistory, setPlayHistory] = useState<PlayEvent[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [showChartModal, setShowChartModal] = useState(false);
+  const [pendingShotLocation, setPendingShotLocation] = useState<{ x: number; y: number } | null>(null);
+  const [pendingPassStart, setPendingPassStart] = useState<{ x: number; y: number } | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [volume, setVolume] = useState(0.5);
   const [cameraZoom, setCameraZoom] = useState(1.0);
