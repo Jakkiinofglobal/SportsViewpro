@@ -270,6 +270,8 @@ export default function Visualizer() {
   const [showChartModal, setShowChartModal] = useState(false);
   const [pendingShotLocation, setPendingShotLocation] = useState<{ x: number; y: number } | null>(null);
   const [pendingPassStart, setPendingPassStart] = useState<{ x: number; y: number } | null>(null);
+  const [selectedTeamFilter, setSelectedTeamFilter] = useState<"home" | "away">("home");
+  const [selectedPlayerFilter, setSelectedPlayerFilter] = useState<string>("all");
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [volume, setVolume] = useState(0.5);
   const [cameraZoom, setCameraZoom] = useState(1.0);
@@ -1042,6 +1044,67 @@ export default function Visualizer() {
         return;
       }
       
+      // Enter key: Log shot/pass/hit (MADE)
+      // Shift+Enter: Log shot/pass/hit (MISSED)
+      if (e.key === "Enter" && planLimits.canUseShotCharts) {
+        const made = !e.shiftKey;
+        const currentState = stateRef.current;
+        const currentTeam = currentState.possession;
+        
+        if (currentState.sport === "basketball" && pendingShotLocation) {
+          const shot: ShotEvent = {
+            id: Date.now().toString(),
+            x: pendingShotLocation.x,
+            y: pendingShotLocation.y,
+            made,
+            playerName: currentState.carrierName || "Unknown",
+            playerJersey: currentState.carrierNumber || "00",
+            team: currentTeam,
+            timestamp: Date.now(),
+          };
+          setState(prev => ({ ...prev, basketballShots: [...prev.basketballShots, shot] }));
+          setPendingShotLocation(null);
+          toast({ description: `${made ? "Made" : "Missed"} shot logged!` });
+        } else if (currentState.sport === "football" && pendingPassStart) {
+          const dist = Math.sqrt(
+            Math.pow(ballPhysics.current.x - pendingPassStart.x, 2) +
+            Math.pow(ballPhysics.current.y - pendingPassStart.y, 2)
+          );
+          const pass: PassEvent = {
+            id: Date.now().toString(),
+            startX: pendingPassStart.x,
+            startY: pendingPassStart.y,
+            endX: ballPhysics.current.x,
+            endY: ballPhysics.current.y,
+            completed: made,
+            playerName: currentState.carrierName || "Unknown",
+            playerJersey: currentState.carrierNumber || "00",
+            team: currentTeam,
+            distance: Math.round(dist / 10),
+            timestamp: Date.now(),
+          };
+          setState(prev => ({ ...prev, footballPasses: [...prev.footballPasses, pass] }));
+          setPendingPassStart(null);
+          toast({ description: `${made ? "Completed" : "Incomplete"} pass logged!` });
+        } else if (currentState.sport === "baseball" && pendingShotLocation) {
+          // For baseball, Enter = single, Shift+Enter = out
+          const hit: HitEvent = {
+            id: Date.now().toString(),
+            x: pendingShotLocation.x,
+            y: pendingShotLocation.y,
+            result: made ? "single" : "out",
+            playerName: currentState.carrierName || "Unknown",
+            playerJersey: currentState.carrierNumber || "00",
+            team: currentTeam,
+            timestamp: Date.now(),
+          };
+          setState(prev => ({ ...prev, baseballHits: [...prev.baseballHits, hit] }));
+          setPendingShotLocation(null);
+          toast({ description: `${made ? "Hit" : "Out"} logged!` });
+        }
+        return;
+      }
+      
       // Check for score hotkeys
       const triggerScore = (team: "home" | "away", points: number) => {
         setState(prev => {
@@ -1198,18 +1261,26 @@ export default function Visualizer() {
       
       mousePos.current = { x, y };
       
-      // Left click: Track shot location (if plan allows)
-      if (e.button === 0 && planLimits.canUseShotCharts) {
+      // Click: Track shot/pass/hit location (if plan allows)
+      if (planLimits.canUseShotCharts) {
         if (state.sport === "basketball") {
           setPendingShotLocation({ x, y });
+          toast({ description: "Shot location set. Press Enter (made) or Shift+Enter (missed)" });
+          return; // Don't drag ball when setting shot location
         } else if (state.sport === "football") {
           if (!pendingPassStart) {
             setPendingPassStart({ x, y });
+            toast({ description: "Pass start set. Move ball to end position, then Enter (complete) or Shift+Enter (incomplete)" });
+            return;
           } else {
-            setPendingPassStart(null);
+            // Second click sets end position via current ball position
+            toast({ description: "Pass end position ready. Press Enter (complete) or Shift+Enter (incomplete)" });
+            return;
           }
         } else if (state.sport === "baseball") {
           setPendingShotLocation({ x, y });
+          toast({ description: "Hit location set. Press Enter (hit) or Shift+Enter (out)" });
+          return; // Don't drag ball when setting hit location
         }
       }
       
