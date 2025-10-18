@@ -1,0 +1,79 @@
+nside the jakiglobal-backend folder
+
+That folder is a backend server — the “brain” behind your SportSight app.
+It’s not the visual app, it’s what handles all the user info, payments, and access tiers.
+
+Inside, it has these key files:
+
+File / Folder	Purpose
+server.js	Starts the backend server so your app can talk to it.
+migrate.js	Creates a small SQLite database (a file that stores users & their plans).
+auth.js	Handles sign-ups and logins (email + password).
+db.js	Connects to the SQLite database and saves data.
+paypal.js	Placeholder for connecting PayPal payments later.
+email.js	Sends emails (optional for later notifications).
+schema.sql	Blueprint for how the database tables look (users, plans, etc.).
+.env.example	Shows what secrets you’ll set in your real .env file (admin email, password, etc.).
+🧠 The purpose
+
+The jakiglobal-backend is there so:
+
+Your users can create accounts and log in
+
+Each user is automatically assigned a plan (demo, studioMonthly, plusMonthly, etc.)
+
+The backend tells your app which features to unlock or gray out
+
+You (the admin) can log in at /admin to view and manage all users
+
+Later, when you add PayPal, it will update plans automatically when someone pays
+
+Basically:
+
+🧩 The frontend (SportSight) = the face.
+🧠 The backend (Jakiglobal folder) = the memory and logic.
+
+💻 What Replit needs to do with it
+
+Install and prepare it
+
+Run cd jakiglobal-backend
+
+Run npm install
+
+Run node migrate.js → builds your user database file
+
+Run cp .env.example .env → then open .env and put your:
+
+ADMIN_EMAIL=you@yourdomain.com
+ADMIN_PASSWORD=StrongPassword123
+JWT_SECRET=SomeLongSecretKey
+PORT=3000
+
+
+Then save the file.
+
+Start it
+
+Run npm run dev or node server.js
+
+It will say something like Server running on port 3000
+
+Replit will show you a preview URL (example: https://yourproject.replit.dev)
+
+You can go to https://yourproject.replit.dev/admin and log in using the email/password you set.
+
+Connect it to your SportSight app
+
+The app will send login requests to this backend (like https://yourproject.replit.dev/api/login)
+
+The backend responds with who the user is and what plan they’re on
+
+SportSight uses that info to lock/unlock features
+
+🔗 What it gives you
+
+✅ Real logins
+✅ Each user tied to a plan
+✅ Admin dashboard
+✅ Future-ready for PayPal auto-plan upgrades

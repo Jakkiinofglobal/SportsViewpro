@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>JakiGlobal Admin</title>
+  <link rel="stylesheet" href="/admin/style.css" />
+</head>
+<body>
+  <header><div class="container"><h1>JakiGlobal Admin</h1></div></header>
+  <div class="container">
+    <div class="card" id="loginCard">
+      <h3>Admin Login</h3>
+      <div class="notice">Use ADMIN_EMAIL / ADMIN_PASSWORD from your .env</div>
+      <div style="display:grid;gap:8px;max-width:360px;margin-top:8px">
+        <input id="adminEmail" placeholder="Admin email" />
+        <input id="adminPassword" type="password" placeholder="Admin password" />
+        <button onclick="adminLogin()">Sign in</button>
+      </div>
+    </div>
+
+    <div class="card" id="dashCard" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <h3>Users</h3>
+        <div>
+          <input id="searchEmail" placeholder="filter by email" oninput="loadUsers()" />
+          <button onclick="loadUsers()">Refresh</button>
+        </div>
+      </div>
+      <table id="usersTable">
+        <thead>
+          <tr><th>Email</th><th>Plan</th><th>Status</th><th>Sport</th><th>Sub ID</th><th>Actions</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  <script src="/admin/admin.js"></script>
+</body>
+</html>
