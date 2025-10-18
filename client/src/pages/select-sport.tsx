@@ -17,10 +17,8 @@ export default function SelectSport() {
 
   const selectSportMutation = useMutation({
     mutationFn: async (sport: string) => {
-      return await apiRequest("/api/select-sport", {
-        method: "POST",
-        body: JSON.stringify({ sport }),
-      });
+      const response = await apiRequest("POST", "/api/select-sport", { sport });
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/session"] });
