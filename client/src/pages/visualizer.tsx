@@ -3128,16 +3128,16 @@ export default function Visualizer() {
             {state.sport === "basketball" && (
               <div className="space-y-3">
                 <div className="text-sm font-semibold">
-                  Total Shots: {state.basketballShots.length} | 
-                  Made: {state.basketballShots.filter(s => s.made).length} | 
-                  Missed: {state.basketballShots.filter(s => !s.made).length}
+                  Total Shots: {state.basketballShots?.length || 0} | 
+                  Made: {state.basketballShots?.filter(s => s.made).length || 0} | 
+                  Missed: {state.basketballShots?.filter(s => !s.made).length || 0}
                 </div>
                 <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
                   <svg className="absolute inset-0 w-full h-full border rounded" viewBox="0 0 1920 1080">
                     <rect width="1920" height="1080" fill="#c19a6b"/>
                     <rect x="260" y="80" width="1400" height="920" stroke="white" strokeWidth="4" fill="none"/>
                     <circle cx="960" cy="540" r="72" stroke="white" strokeWidth="4" fill="none"/>
-                    {state.basketballShots.map(shot => (
+                    {state.basketballShots?.map(shot => (
                       <circle
                         key={shot.id}
                         cx={shot.x}
@@ -3158,15 +3158,15 @@ export default function Visualizer() {
             {state.sport === "football" && (
               <div className="space-y-3">
                 <div className="text-sm font-semibold">
-                  Total Passes: {state.footballPasses.length} | 
-                  Completed: {state.footballPasses.filter(p => p.completed).length} |
-                  Avg Distance: {state.footballPasses.length > 0 ? 
+                  Total Passes: {state.footballPasses?.length || 0} | 
+                  Completed: {state.footballPasses?.filter(p => p.completed).length || 0} |
+                  Avg Distance: {(state.footballPasses?.length || 0) > 0 ? 
                     Math.round(state.footballPasses.reduce((sum, p) => sum + p.distance, 0) / state.footballPasses.length) : 0} yds
                 </div>
                 <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
                   <svg className="absolute inset-0 w-full h-full border rounded" viewBox="0 0 1920 1080">
                     <rect width="1920" height="1080" fill="#228B22"/>
-                    {state.footballPasses.map(pass => (
+                    {state.footballPasses?.map(pass => (
                       <g key={pass.id}>
                         <line
                           x1={pass.startX}
@@ -3189,13 +3189,13 @@ export default function Visualizer() {
             {state.sport === "baseball" && (
               <div className="space-y-3">
                 <div className="text-sm font-semibold">
-                  Total Hits: {state.baseballHits.length} | 
-                  Home Runs: {state.baseballHits.filter(h => h.result === "hr").length}
+                  Total Hits: {state.baseballHits?.length || 0} | 
+                  Home Runs: {state.baseballHits?.filter(h => h.result === "hr").length || 0}
                 </div>
                 <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
                   <svg className="absolute inset-0 w-full h-full border rounded" viewBox="0 0 1920 1080">
                     <rect width="1920" height="1080" fill="#228B22"/>
-                    {state.baseballHits.map(hit => {
+                    {state.baseballHits?.map(hit => {
                       const colors = {
                         single: "#22c55e",
                         double: "#3b82f6",
