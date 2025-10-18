@@ -3385,34 +3385,51 @@ export default function Visualizer() {
               
               return (
                 <div className="space-y-4">
-                  <div className="text-base font-bold bg-muted p-3 rounded">
+                  <div className="text-lg font-bold bg-muted p-4 rounded">
                     Total: {filteredShots.length} | Made: {made} | Missed: {missed} | FG%: {pct}%
                   </div>
-                  <div className="relative w-full bg-[#c19a6b] rounded shadow-lg" style={{ paddingBottom: "56.25%" }}>
+                  <div className="relative w-full rounded-lg shadow-2xl overflow-hidden" style={{ paddingBottom: "56.25%" }}>
                     <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1920 1080">
-                      {/* Basketball court - matching actual court dimensions */}
-                      <rect x="100" y="100" width="1720" height="880" stroke="white" strokeWidth="8" fill="none"/>
-                      <line x1="960" y1="100" x2="960" y2="980" stroke="white" strokeWidth="8"/>
-                      <circle cx="960" cy="540" r="120" stroke="white" strokeWidth="8" fill="none"/>
-                      {/* 3-point arcs */}
-                      <path d="M 200,540 A 400,400 0 0,1 200,300" stroke="white" strokeWidth="8" fill="none"/>
-                      <path d="M 200,540 A 400,400 0 0,0 200,780" stroke="white" strokeWidth="8" fill="none"/>
-                      <path d="M 1720,540 A 400,400 0 0,0 1720,300" stroke="white" strokeWidth="8" fill="none"/>
-                      <path d="M 1720,540 A 400,400 0 0,1 1720,780" stroke="white" strokeWidth="8" fill="none"/>
-                      {/* Free throw lanes */}
-                      <rect x="840" y="400" width="240" height="280" stroke="white" strokeWidth="6" fill="none"/>
-                      {/* Hoops */}
-                      <circle cx="180" cy="540" r="30" stroke="#ff6600" strokeWidth="8" fill="none"/>
-                      <circle cx="1740" cy="540" r="30" stroke="#ff6600" strokeWidth="8" fill="none"/>
+                      {/* Wood court gradient background */}
+                      <defs>
+                        <linearGradient id="courtGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor="#c19a6b" />
+                          <stop offset="100%" stopColor="#a67c52" />
+                        </linearGradient>
+                      </defs>
+                      <rect x="0" y="0" width="1920" height="1080" fill="url(#courtGradient)"/>
+                      
+                      {/* EXACT match to game court dimensions */}
+                      {/* Border */}
+                      <rect x="100" y="100" width="1720" height="880" stroke="white" strokeWidth="6" fill="none"/>
+                      
+                      {/* Center line */}
+                      <line x1="960" y1="100" x2="960" y2="980" stroke="white" strokeWidth="6"/>
+                      
+                      {/* Center circle */}
+                      <circle cx="960" cy="540" r="120" stroke="white" strokeWidth="6" fill="none"/>
+                      
+                      {/* 3-point arcs - EXACT from game */}
+                      <path d="M 200,740 A 400,400 0 0,1 200,340" stroke="white" strokeWidth="6" fill="none"/>
+                      <path d="M 1720,340 A 400,400 0 0,1 1720,740" stroke="white" strokeWidth="6" fill="none"/>
+                      
+                      {/* Backboards */}
+                      <rect x="95" y="480" width="10" height="120" fill="rgba(255, 255, 255, 0.9)"/>
+                      <rect x="1815" y="480" width="10" height="120" fill="rgba(255, 255, 255, 0.9)"/>
+                      
+                      {/* Hoops - EXACT positions */}
+                      <circle cx="180" cy="540" r="25" stroke="#ff6600" strokeWidth="8" fill="none"/>
+                      <circle cx="1740" cy="540" r="25" stroke="#ff6600" strokeWidth="8" fill="none"/>
+                      
                       {/* Shots */}
                       {filteredShots.map(shot => (
                         <circle
                           key={shot.id}
                           cx={shot.x}
                           cy={shot.y}
-                          r="20"
+                          r="18"
                           fill={shot.made ? "#22c55e" : "#ef4444"}
-                          opacity="0.8"
+                          opacity="0.85"
                           stroke="white"
                           strokeWidth="3"
                         />
