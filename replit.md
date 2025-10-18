@@ -177,6 +177,26 @@ UPDATE users SET is_admin = true WHERE email = 'your-email@example.com';
 
 ## Recent Changes
 
+### 2025-10-18: Shot Chart & Analytics System
+- **Shot Chart Tracking**:
+  - Basketball: Left-click records shots (green=make, red=miss) with player attribution
+  - Football: Pass distance tracker with line visualization showing throw trajectory
+  - Baseball: Hit spray chart with color-coded hit types (single/double/triple/HR)
+- **Chart Modal**:
+  - Comprehensive analytics modal with sport-specific tabs
+  - Real-time statistics (shooting %, pass completion, hit distribution)
+  - Visual field representation with all tracked events
+  - Clear chart functionality to reset tracking data
+- **Plan Gating**:
+  - Chart access restricted to Plus Monthly, Creator Yearly, and Pro One-Time plans
+  - Demo and Studio users see upgrade prompts with lock icons
+  - Integrated with existing `usePlanLimits` hook
+- **Chart Buttons**:
+  - Basketball: "Shot Chart" button in shot clock section
+  - Football: "Pass Chart" button in play clock section
+  - Baseball: "Hit Chart" button in inning controls section
+- **Data Storage**: All tracking data persists in localStorage with backward compatibility
+
 ### 2025-10-18: Complete Feature Gating System
 - **Upgrade Modal Component**: 
   - PayPal integration with all 5 pricing tiers
