@@ -981,6 +981,65 @@ export default function Visualizer() {
     // Draw ball
     drawBall(ctx);
     
+    // Draw pending shot/pass/hit indicator
+    if (pendingShotLocation) {
+      ctx.save();
+      ctx.strokeStyle = "#3b82f6";
+      ctx.fillStyle = "rgba(59, 130, 246, 0.2)";
+      ctx.lineWidth = 3;
+      const pulse = Math.sin(timestamp / 200) * 5 + 25;
+      ctx.beginPath();
+      ctx.arc(pendingShotLocation.x, pendingShotLocation.y, pulse, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      
+      // Cross hair
+      ctx.strokeStyle = "#3b82f6";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(pendingShotLocation.x - 20, pendingShotLocation.y);
+      ctx.lineTo(pendingShotLocation.x + 20, pendingShotLocation.y);
+      ctx.moveTo(pendingShotLocation.x, pendingShotLocation.y - 20);
+      ctx.lineTo(pendingShotLocation.x, pendingShotLocation.y + 20);
+      ctx.stroke();
+      
+      // Text hint
+      ctx.fillStyle = "#3b82f6";
+      ctx.font = "600 14px 'JetBrains Mono'";
+      ctx.textAlign = "center";
+      ctx.fillText("Press Enter", pendingShotLocation.x, pendingShotLocation.y - 40);
+      ctx.restore();
+    }
+    
+    if (pendingPassStart) {
+      ctx.save();
+      ctx.strokeStyle = "#10b981";
+      ctx.fillStyle = "rgba(16, 185, 129, 0.2)";
+      ctx.lineWidth = 3;
+      const pulse = Math.sin(timestamp / 200) * 5 + 20;
+      ctx.beginPath();
+      ctx.arc(pendingPassStart.x, pendingPassStart.y, pulse, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      
+      // Line to current ball position
+      ctx.setLineDash([5, 5]);
+      ctx.strokeStyle = "#10b981";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(pendingPassStart.x, pendingPassStart.y);
+      ctx.lineTo(ballPhysics.current.x, ballPhysics.current.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // Text hint
+      ctx.fillStyle = "#10b981";
+      ctx.font = "600 14px 'JetBrains Mono'";
+      ctx.textAlign = "center";
+      ctx.fillText("Press Enter", pendingPassStart.x, pendingPassStart.y - 30);
+      ctx.restore();
+    }
+    
     // Restore camera transformations
     ctx.restore();
     
