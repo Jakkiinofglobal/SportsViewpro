@@ -1,258 +1,17 @@
-# Multi-Sport Visualizer
-
-A professional client-side web application for visualizing multi-sport play-by-play action with broadcast-ready HUD controls. Built for use as a browser source in streaming/recording software.
+# SportSight - Multi-Sport Visualizer
 
 ## Overview
 
-This is a pure client-side application (no backend) that provides a comprehensive sports visualization system for Basketball, Football, and Baseball. It features:
+SportSight is a full-stack, monetizable SaaS platform designed for visualizing multi-sport play-by-play action with broadcast-ready HUD controls. It offers comprehensive sports visualization for Basketball, Football, and Baseball, featuring user authentication, subscription tiers, PayPal integration, and an admin dashboard. The platform aims to provide a professional tool for sports analysis, broadcasting, and content creation.
 
-- **Three Complete Sport Modes**: Basketball, Football, Baseball with sport-specific field/court rendering
-- **Interactive Ball Control**: Keyboard arrows and mouse click-drag for smooth ball movement
-- **Comprehensive Game Management**: Live clocks, scores, possession, team rosters, and ball carrier tracking
-- **Sport-Specific Features**:
-  - Basketball: 24-second shot clock with reset and 14-second options
-  - Football: Play clock, quarter controls, down & distance tracking
-  - Baseball: Ball/Strike/Out counter with automatic inning progression and runner tracking
-- **Home Team Logo**: Upload, resize, drag-and-drop positioning with presets
-- **Video Clip System**: Upload and playback 5 video clips per team for instant replays
-- **Play History Log**: Timestamped event tracking with scrollable history display
-- **Sound Effects**: Web Audio API-based scoring sounds, possession chimes, with volume controls
-- **Camera Controls**: Zoom (0.5x-3.0x), pan, and preset camera angles for dynamic views
-- **Game Stats Dashboard**: Real-time possession time, scoring runs, and analytics
-- **Export Functionality**: Download session data as JSON, play history as CSV
-- **Full Session Persistence**: Save/Load/New session management via localStorage
-- **Dark Sci-Fi HUD Theme**: Professional broadcast-quality interface with blue/gold accents
+**Key Capabilities:**
 
-## Architecture
-
-### Frontend Only (No Backend)
-- Pure HTML5 Canvas for rendering (1920×1080 logical size)
-- Vanilla JavaScript/TypeScript with React
-- CSS3 for dark sci-fi HUD styling
-- LocalStorage API for all persistence
-- FileReader API for logo upload
-
-### Key Files
-- `client/src/pages/visualizer.tsx` - Main visualizer component with all game logic
-- `client/src/index.css` - Dark sci-fi theme with custom animations
-- `client/index.html` - App entry with proper fonts and meta tags
-- `design_guidelines.md` - Complete design system documentation
-
-### Canvas Rendering
-- Logical size: 1920×1080 pixels
-- Responsive with 16:9 aspect ratio maintained via CSS
-- No zoom/jitter - smooth rendering via requestAnimationFrame
-- Delta-time based animations for consistent speed
-
-## Features
-
-### Sport Switching
-- Toggle between Basketball 🏀, Football 🏈, Baseball ⚾
-- Automatic field/court redraw
-- Sport-specific timer controls
-- Default logo positioning per sport
-
-### Ball Movement
-- **Keyboard**: Arrow keys to move, Shift for sprint, Space for pulse ring
-- **Mouse**: Click-drag for precise positioning anywhere on field
-- **Visual Effects**: Optional trail, pulse ring animation
-- **Sport-Specific Rendering**:
-  - Basketball: Orange ball with seams
-  - Football: Brown ellipse with laces, rotates with movement
-  - Baseball: White ball with red stitching
-- **Carrier Label**: Shows jersey number and player name below ball when set
-
-### Game Controls
-- **Scoreboard**: Home/Away scores with -1 and +1/+2/+3 buttons (Baseball uses -1/+1 only)
-  - -1 buttons allow point correction (minimum score: 0)
-  - Add buttons with optional keyboard hotkeys for quick scoring
-- **Teams**: Name input, roster management via unified interface
-- **Possession**: Toggle with automatic clock resets on change
-- **Game Clock**: Start/Stop/Reset with speed multiplier (×0.75/×1.00/×1.25/×1.50)
-
-### Basketball Controls
-- 24-second shot clock
-- "24 → 14" reset button
-- "Reset 24" button
-- Auto-reset on possession change
-
-### Football Controls
-- 40-second play clock with "Reset 40" and "Delay +5s"
-- Quarter controls (Q−/Q+)
-- Down controls (1st through 4th)
-- To-Go yards (±5 buttons)
-- Auto-reset play clock on possession change
-
-### Baseball Controls
-- Ball/Strike/Out counter with dedicated buttons
-- Automatic 3-out logic: resets count, clears bases, flips Top↔Bottom
-- After Bottom inning: increments inning number
-- Runner tracking on 1st, 2nd, 3rd base
-- Advance buttons (1B/2B/3B) with automatic run scoring
-- Clear bases button
-
-### Teams & Player Hotkeys (Unified System)
-- **Single Interface**: Consolidated card combines team management and player hotkey assignment
-- **Format**: One player per line: `Name #number, hotkey` (e.g., "Amen Thompson #1, q")
-- **Separate Home/Away Management**:
-  - Individual text areas for home and away teams
-  - Load button per team - validates and loads roster + hotkeys
-  - Clear button per team - removes roster and all associated hotkeys
-- **Quick Switching**: Press assigned hotkey to instantly set ball carrier
-- **Active Hotkeys Display**: Shows all loaded hotkeys in format "KEY → Name #number"
-- **Current Ball Carrier**: Displays selected carrier with name and number
-- **Carrier Display**: Ball shows both jersey number and player name (16px font) beneath ball
-- **Validation**: All-or-nothing approach - if any errors found, nothing loads
-- **Error Checking**: Validates format, hotkey characters (0-9, a-z), and prevents duplicates
-- **Persistence**: Team rosters, player hotkeys, and names saved in session
-
-### Score Hotkeys
-- **Keyboard Shortcuts**: Assign hotkeys to all scoring buttons (+1, +2, +3 for home and away)
-- **Visual Indicators**: Assigned hotkeys displayed on buttons (e.g., "+1 (Q)")
-- **Quick Scoring**: Press hotkey to trigger score with full effects (sound, visual, stats)
-- **Full Integration**: Hotkey scoring includes goal lighting and play history logging
-
-### Goal Lighting Effect
-- **Visual Feedback**: Pulsing golden light effect when scoring (800ms duration)
-- **Sport-Specific**:
-  - Basketball: Lights up hoop/basket area
-  - Football: Lights up scoring endzone
-  - Baseball: Lights up home plate area
-- **Automatic Trigger**: Activates on all scoring actions (button click or hotkey)
-
-### Home Logo Management
-- **Upload**: PNG/JPG file input
-- **Size**: Slider control (10-100% scale)
-- **Position**: 
-  - Drag mode toggle for manual positioning
-  - Presets: Auto (sport-default), TL, TR, Center, BL, BR
-  - Default position only applied if user hasn't positioned logo yet
-- **Persistence**: Logo position and scale saved in session (image file must be re-uploaded)
-
-### Video Clip System
-- **Upload**: 5 video clips per team (Home/Away)
-- **File Support**: MP4, WebM, MOV formats
-- **Playback Modal**: Click play buttons to view clips in fullscreen dialog
-- **Video Controls**: Standard browser video player with play/pause/seek
-- **Quick Access**: Direct playback buttons for each clip slot
-- **Storage**: Video file URLs stored in session (files must be re-uploaded on reload)
-
-### Play History Log
-- **Event Tracking**: Automatic timestamped logging of:
-  - Score changes (team, points, new total)
-  - Possession changes
-  - Period/quarter/inning changes
-- **Display**: Scrollable event list with latest events at top
-- **Storage**: Maintains last 100 events
-- **Toggle View**: Show/Hide history panel
-- **Clear Function**: Reset history to start fresh
-- **Export**: Download complete history as CSV file
-
-### Sound Effects System
-- **Web Audio API**: Browser-native sound generation (no external audio files)
-- **Scoring Sounds**: Different tones for 1/2/3 point scores (C5/E5/G5 frequencies)
-- **Possession Sound**: Chime on possession change (A4 frequency)
-- **Clock Warning**: Low tone for final seconds (A3 frequency)
-- **Controls**:
-  - Sound ON/OFF toggle
-  - Volume slider (0-100%)
-  - Real-time volume adjustment
-- **Mute State**: Persists during session
-
-### Camera & Zoom Controls
-- **Zoom**: 0.5x to 3.0x magnification with slider control
-- **Pan Controls**: Arrow buttons (↑↓←→) for field navigation
-- **Presets**:
-  - Center: Default 1.0x zoom, centered view
-  - Wide: 0.8x zoom for full field overview
-  - Goal/Endzone/Home: Sport-specific close-up (2.0x zoom on key areas)
-  - Action: 1.5x zoom maintaining current pan position
-- **Reset View**: One-click return to default camera position
-- **Canvas Transform**: Applies ctx.translate/scale for smooth zoom/pan
-
-### Game Stats Dashboard
-- **Possession Time**: Live tracking of time each team holds possession
-  - Updates every second when game clock is running
-  - Separate counters for Home/Away teams
-  - Displays in MM:SS format
-- **Scoring Runs**: Tracks consecutive points by one team
-  - Shows current team on run and total points
-  - Resets when opposing team scores
-- **Scoring Summary**:
-  - Total number of scoring events per team
-  - Score history tracking
-- **Toggle Display**: Show/Hide stats panel
-- **Real-time Updates**: Stats update live during gameplay
-
-### Session Management & Export
-- **Save Session**: Stores complete game state to localStorage (key: msv:session)
-  - Sport, clock states, speeds
-  - Team names, rosters, scores, possession
-  - Basketball shot clock
-  - Football quarter/down/to-go
-  - Baseball inning/half, B/S/O, runners
-  - Ball position, trail setting
-  - Logo position and scale
-  - Game stats (possession time, scoring data)
-  - Player hotkeys (jersey, name, hotkey mappings)
-  - Score hotkeys (all 6 scoring buttons)
-  - Carrier name (for display under ball)
-- **Load Session**: Restores all saved state including hotkeys
-- **New Session**: Clears session and refreshes page
-- **Export Session (JSON)**: Download complete game data with stats
-  - Includes all game state, settings, and statistics
-  - Timestamped filename: `game-session-{timestamp}.json`
-- **Export History (CSV)**: Download play-by-play events
-  - CSV format: Timestamp, Type, Description
-  - Timestamped filename: `play-history-{timestamp}.csv`
-  - Disabled when no history events exist
-
-## HUD Layout
-
-### Top Bar (Overlay)
-- Sport icon (🏀/🏈/⚾)
-- Live LED indicator with pulse animation
-- Period/Quarter/Inning display
-- Game clock (MM:SS format)
-- Sport-specific timer chip:
-  - Basketball: Shot clock (24.0s)
-  - Football: Down & distance (1st & 10)
-  - Baseball: Count (B-S O OUT)
-
-### Bottom Bar
-- Keyboard/mouse control hints
-
-### Left Control Panel (320px fixed width)
-- Scrollable sections for all controls
-- Organized cards (optimized workflow order): 
-  - Sport Switch
-  - Teams & Player Hotkeys (unified interface with format "Name #number, hotkey")
-  - Video Clips (5 slots per team)
-  - Basketball Shot Clock (Reset 24, 24→14)
-  - Scoreboard (with score hotkeys), Clocks
-  - Sport Details (Basketball/Football/Baseball specific)
-  - Ball Controls, Sound Effects, Camera & Zoom
-  - Logo positioning
-  - Game Stats, Play History
-  - Session management & Export
-- Dark sci-fi styling with blue/gold accents
-
-### Right Stage Area
-- Flex-grow container with centered 16:9 canvas
-- Canvas wrapper maintains aspect ratio
-- Max-width constraint for optimal viewing
-
-## Persistence Keys
-
-LocalStorage keys used:
-- `msv:session` - Full session state including:
-  - Team names and rosters (home/away)
-  - Player hotkeys and names
-  - Score hotkeys
-  - All game data (sport, clocks, scores, ball position, etc.)
-  - Logo positions and scales
-  - Game stats and history
-  - Note: Logo image files must be re-uploaded on reload
+*   **Multi-Sport Modes:** Basketball, Football, and Baseball with sport-specific rendering and controls.
+*   **Interactive Controls:** Intuitive keyboard/mouse ball control, comprehensive game management (clocks, scores, possession, rosters), and sport-specific features (shot clock, play clock, B/S/O count).
+*   **Dynamic Visuals:** Customizable home team logo, video clip system for instant replays, goal lighting effects, and flexible camera controls (zoom, pan, presets).
+*   **Data & Analytics:** Real-time play history logging, game stats dashboard (possession time, scoring runs), and session export functionality (JSON, CSV).
+*   **Professional Interface:** Dark sci-fi HUD theme designed for broadcast quality, with sound effects.
+*   **Full-Stack Functionality:** User authentication, subscription management, and persistence for game sessions.
 
 ## User Preferences
 
@@ -261,38 +20,214 @@ LocalStorage keys used:
 - Perfect for browser source capture in OBS/streaming software
 - Responsive canvas with stable 1920×1080 logical coordinates
 
+## System Architecture
+
+SportSight is a full-stack application leveraging a modern web architecture.
+
+**UI/UX Decisions:**
+
+*   **Theme:** Professional dark sci-fi HUD theme with blue/gold accents for a broadcast-quality interface.
+*   **Canvas Rendering:** Pure HTML5 Canvas rendering at a logical size of 1920x1080 pixels, maintaining a 16:9 aspect ratio via CSS. Utilizes `requestAnimationFrame` and delta-time based animations for smooth, consistent rendering.
+*   **Layout:**
+    *   **Top Bar:** Overlay for sport icon, live LED indicator, period/quarter/inning display, game clock, and sport-specific timers.
+    *   **Bottom Bar:** Control hints.
+    *   **Left Control Panel (320px fixed width):** Scrollable, organized sections for all controls (Sport Switch, Teams & Player Hotkeys, Video Clips, Scoreboard, Ball Controls, Camera & Zoom, Session management, etc.) in a card-based layout for optimized workflow.
+    *   **Right Stage Area:** Flex-grow container with a centered, aspect-ratio-maintained canvas.
+
+**Technical Implementations:**
+
+*   **Ball Movement:** Keyboard (arrows, Shift for sprint, Space for pulse) and mouse click-drag controls. Features visual effects (trail, pulse ring) and sport-specific rendering (basketball, football, baseball).
+*   **Game Controls:** Scoreboard with correction buttons, team name input, roster management, possession toggle, and game clock with speed multiplier.
+*   **Sport-Specific Features:**
+    *   **Basketball:** 24-second shot clock with reset options.
+    *   **Football:** 40-second play clock, quarter controls, down & distance tracking.
+    *   **Baseball:** Ball/Strike/Out counter, automatic inning progression, and runner tracking.
+*   **Teams & Player Hotkeys:** Unified interface for roster management and hotkey assignment (`Name #number, hotkey`). Supports separate home/away management, quick switching, active hotkeys display, and robust validation.
+*   **Score Hotkeys:** Keyboard shortcuts assignable to all scoring buttons, with visual indicators.
+*   **Goal Lighting Effect:** Pulsing golden light effect (800ms) triggered on scoring, sport-specifically rendered (hoop, endzone, home plate).
+*   **Home Logo Management:** Upload (PNG/JPG), size slider, manual drag/drop positioning, and preset options.
+*   **Video Clip System:** Upload and playback of 5 video clips per team (MP4, WebM, MOV) with standard player controls in a modal.
+*   **Play History Log:** Automatic timestamped event tracking (score, possession, period changes), scrollable display, and CSV export.
+*   **Sound Effects System:** Web Audio API for browser-native scoring sounds, possession chimes, and clock warnings, with volume controls.
+*   **Camera & Zoom Controls:** 0.5x-3.0x zoom slider, pan controls (arrow buttons), and preset camera angles (Center, Wide, Goal, Action).
+*   **Game Stats Dashboard:** Real-time tracking of possession time, scoring runs, and a scoring summary.
+*   **Session Management & Export:** Save/Load/New session functionality via `localStorage`, and export complete session data (JSON) or play history (CSV).
+
+**System Design Choices:**
+
+*   **Full-Stack Application:**
+    *   **Backend (Node.js + Express):** Handles JWT-based authentication with HTTP-only cookies, PayPal integration for subscriptions, admin APIs for user management, and RESTful API design.
+    *   **Frontend (React + TypeScript):** Uses Wouter for routing, TanStack Query for data fetching, and CSS3 for styling.
+*   **Persistence:** LocalStorage API for game session persistence, storing all game state, settings, hotkeys, stats, and history.
+
+## External Dependencies
+
+*   **Database:** PostgreSQL (Replit-hosted Neon)
+*   **Payment Gateway:** PayPal
+*   **Frontend Data Fetching:** TanStack Query
+*   **Frontend Routing:** Wouter
+## Monetization System
+
+### Subscription Tiers
+
+SportSight offers 5 pricing tiers with feature-based access control:
+
+| Plan ID | Name | Price | Sports | Clips | Hotkeys | Export |
+|---------|------|-------|--------|-------|---------|--------|
+| `demo` | Demo (Free) | $0 | 1 sport | 1 total | 2H + 2A (points +2/+3 only) | No |
+| `studioMonthly` | Studio Monthly | $28.99/mo | 1 sport | 2 (1 home, 1 away) | 5H + 5A (all points) | Basic |
+| `plusMonthly` | Plus Monthly (Pro) | $39.99/mo | All sports | 10 clips | 10H + 10A (all points) | Full |
+| `creatorYearly` | Creator Yearly | $198.97/yr | All sports | 10 clips | 10H + 10A (all points) | Full |
+| `proOneTime` | SportSight Pro Studio | $349.99 one-time | All sports | 10 clips | 10H + 10A (all points) | Full |
+
+### User Flow
+
+1. **Signup**: User creates account (email + password) → Auto-assigned to Demo plan
+2. **Sport Selection**: User chooses their sport
+   - Demo/Studio users: Must pick ONE sport (locked)
+   - Plus/Creator/Pro users: Can switch sports anytime
+3. **Main App**: Access visualizer with features based on plan
+4. **Upgrade**: Click locked features → Upgrade modal → PayPal checkout
+
+### Admin Dashboard
+
+**Access:** Navigate to `/admin` (requires admin privileges)
+
+**Features:**
+- View all users with email, plan, sport, and subscription status
+- Change user plans (dropdown selector)
+- Ban users (with reason tracking)
+- Grant free months (with reason logging)
+- View all admin actions per user
+
+**Creating First Admin:**
+```sql
+-- Connect to your PostgreSQL database and run:
+UPDATE users SET is_admin = true WHERE email = 'your-email@example.com';
+```
+
+### PayPal Integration
+
+**Setup (Required for payments):**
+1. Get PayPal Business account
+2. Go to https://developer.paypal.com/dashboard/
+3. Create app under "REST API apps"
+4. Add credentials to Replit Secrets:
+   - `PAYPAL_CLIENT_ID` - Your PayPal Client ID
+   - `PAYPAL_CLIENT_SECRET` - Your PayPal Secret
+5. Use **Sandbox** for testing, **Live** for production
+
+**Payment Flow:**
+1. User clicks upgrade → Selects plan
+2. PayPal button appears with plan price
+3. User completes payment via PayPal
+4. Backend receives webhook → Updates user plan
+5. User gets instant access to new features
+
+### API Endpoints
+
+**Authentication:**
+- `POST /api/auth/signup` - Create new account
+- `POST /api/auth/login` - Login with email/password
+- `POST /api/auth/logout` - Logout (clears cookie)
+- `GET /api/auth/session` - Get current user
+
+**Sport Selection:**
+- `POST /api/select-sport` - Set user's sport (validates plan restrictions)
+
+**PayPal:**
+- `GET /paypal/setup` - Get PayPal client token
+- `POST /paypal/order` - Create PayPal order
+- `POST /paypal/order/:orderID/capture` - Capture completed payment
+- `POST /api/payment/success` - Update user plan after payment
+
+**Admin (requires admin auth):**
+- `GET /api/admin/users` - Get all users
+- `POST /api/admin/users/:userId/plan` - Change user plan
+- `POST /api/admin/users/:userId/ban` - Ban user
+- `POST /api/admin/users/:userId/free-months` - Grant free months
+- `GET /api/admin/users/:userId/actions` - View admin action history
+
+### Database Schema
+
+**Users Table:**
+- `id` - UUID primary key
+- `email` - Unique email address
+- `password` - Bcrypt hashed password
+- `plan` - Current subscription plan (default: 'demo')
+- `selectedSport` - Chosen sport (basketball/football/baseball)
+- `purchasedSport` - Sport locked at purchase (for single-sport plans)
+- `subscriptionId` - PayPal subscription ID
+- `subscriptionStatus` - active/banned/etc
+- `isAdmin` - Admin flag
+- `createdAt` - Account creation timestamp
+- `updatedAt` - Last update timestamp
+
+**Transactions Table:**
+- Records all payment transactions
+- Links to user via `userId`
+- Stores PayPal order/subscription IDs
+- Tracks amount, currency, status
+
+**Admin Actions Table:**
+- Logs all admin interventions
+- Tracks which admin performed action
+- Records action type and details
+- Timestamped audit trail
+
 ## Recent Changes
 
+### 2025-10-18: Complete Backend Monetization System
+- **PostgreSQL Database**: Users, transactions, admin actions tables
+- **JWT Authentication**: Secure HTTP-only cookie-based auth system
+- **PayPal Integration**: Complete payment processing with 5 pricing tiers
+- **Admin Dashboard**: 
+  - View all users and subscription details
+  - Change user plans with reason tracking
+  - Ban/unban users with audit logging
+  - Grant free months feature
+- **Frontend Pages**:
+  - Login/Signup pages with validation
+  - Sport selection with plan-based restrictions
+  - Protected routes requiring authentication
+  - Admin dashboard at `/admin`
+- **API Routes**: RESTful backend with auth middleware
+- **Feature Gating**: Plan-based access control (ready for visualizer integration)
+
 ### 2025-10-16: Score Correction & Quarter Fix
-- **Score Correction Buttons**: Added -1 buttons for both home and away teams to allow point corrections
-  - Prevents score from going below 0
-  - Logs correction events to play history
-  - No sound/visual effects for corrections (maintains focus on actual scoring)
-- **Quarter Display Fix**: Fixed NaN display issue in quarter/period display when loading older sessions
+- Score correction buttons (-1) for both home and away teams
+- Fixed NaN display in quarter/period when loading older sessions
 
-### 2025-10-16: Unified Teams & Player Hotkeys System
-- **Consolidated Interface**: Combined Teams, Player Hotkeys, and Ball Carrier into single "Teams & Player Hotkeys" card
-- **Streamlined Format**: New format `Name #number, hotkey` (e.g., "Amen Thompson #1, q") for one-line player entry
-- **Separate Team Management**: Individual Load/Clear functions for home and away teams with independent text areas
-- **Active Hotkeys Display**: Shows all loaded hotkeys in format "KEY → Name #number"
-- **Current Ball Carrier**: Displays selected carrier beneath Active Hotkeys
-- **Enhanced Carrier Display**: Ball shows both jersey number (16px, bold) and player name (16px) beneath ball
-- **Score Hotkeys**: Keyboard shortcuts for all scoring buttons with visual indicators on buttons
-- **Goal Lighting Effect**: Pulsing golden light effect (800ms) on scoring - sport-specific rendering
-- **Session Persistence**: All team data, hotkeys, and carrier names saved in sessions
+### 2025-10-16: Unified Teams & Player Hotkeys
+- Consolidated Teams, Player Hotkeys, Ball Carrier into single card
+- Score hotkeys for all scoring buttons
+- Goal lighting effect on scoring
 
-### 2025-10-16: Advanced Features Update
-- **Video Clip System**: Upload and playback 5 clips per team for instant replays
-- **Play History Log**: Timestamped event tracking with scrollable display and CSV export
-- **Sound Effects**: Web Audio API implementation with scoring sounds, possession chimes, volume controls
-- **Camera Controls**: Zoom (0.5x-3.0x), pan controls, and preset camera angles
-- **Game Stats Dashboard**: Real-time possession time tracking, scoring runs, and analytics
-- **Export Functionality**: JSON session export and CSV history export
+### 2025-10-16: Advanced Features
+- Video clip system (5 per team)
+- Play history log with CSV export
+- Sound effects system with Web Audio API
+- Camera controls with zoom and presets
+- Game stats dashboard
 
-### 2025-10-15: Initial Implementation
-- Three complete sport modes (Basketball, Football, Baseball)
-- Complete game management system with persistence
-- Professional dark sci-fi HUD design with animations
-- Full keyboard and mouse controls for ball movement
-- Logo upload and positioning system
-- Session save/load functionality
+## Deployment Notes
+
+**Current Setup:**
+- Backend: Runs on Replit (port 5000)
+- Database: PostgreSQL (Replit-hosted Neon)
+- Frontend: Can be deployed to Vercel/Netlify
+- PayPal: Sandbox for testing, Live for production
+
+**Production Checklist:**
+1. ✅ Add PayPal Live credentials (replace Sandbox)
+2. ✅ Create first admin user via SQL
+3. ✅ Test complete signup → payment → access flow
+4. ✅ Set up proper CORS for production domain
+5. ✅ Enable HTTPS (required for cookies in production)
+
+**Security Notes:**
+- JWT tokens stored in HTTP-only cookies (prevents XSS)
+- Passwords hashed with bcrypt (10 rounds)
+- Admin routes protected by middleware
+- CORS configured for frontend domain
+

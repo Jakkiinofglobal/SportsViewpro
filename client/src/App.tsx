@@ -8,6 +8,7 @@ import Visualizer from "@/pages/visualizer";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
 import SelectSport from "@/pages/select-sport";
+import Admin from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 
 function ProtectedRoute({ component: Component }: { component: () => JSX.Element }) {
@@ -40,6 +41,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/signup" component={Signup} />
       <Route path="/select-sport" component={SelectSport} />
+      <Route path="/admin" component={Admin} />
       <Route path="/">
         {() => <ProtectedRoute component={Visualizer} />}
       </Route>
