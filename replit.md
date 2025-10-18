@@ -62,3 +62,19 @@ SportSight is a full-stack application leveraging a modern web architecture.
 *   **Payment Gateway:** PayPal
 *   **Frontend Data Fetching:** TanStack Query
 *   **Frontend Routing:** Wouter
+
+## Recent Updates (Oct 18, 2025)
+
+### Shot Chart Redesign with Enter Key Tracking
+- **New Interaction Model**: Changed from left/right-click (conflicted with Windows screenshot tool) to Enter key system
+  - Click canvas to set shot/pass/hit location
+  - Press **Enter** for made/completed shots (green markers)
+  - Press **Shift+Enter** for missed/incomplete shots (red markers)
+- **Visual Feedback**: Pulsing blue crosshair shows pending shot location on canvas
+- **Chart Modal Enhancements**:
+  - Two-dropdown filter system: Team selector (Home/Away) + Player selector (All Players or individual)
+  - Stats bar displays FG%, Comp%, and detailed breakdown next to filters
+  - Court/field visuals match actual game dimensions from canvas rendering
+  - Accumulated shots displayed on realistic field layouts
+- **Data Persistence**: All shot/pass/hit data stored in localStorage arrays (basketballShots, footballPasses, baseballHits)
+- **Plan Gating**: Shot charts restricted to Plus Monthly, Creator Yearly, and Pro One-Time plans
