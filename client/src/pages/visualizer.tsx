@@ -20,6 +20,9 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { UpgradeModal } from "@/components/upgrade-modal";
+import { usePlanLimits } from "@/hooks/use-plan-limits";
+import { Lock } from "lucide-react";
 
 type Sport = "basketball" | "football" | "baseball";
 type SpeedMultiplier = 0.75 | 1.0 | 1.25 | 1.5;
@@ -141,6 +144,14 @@ export default function Visualizer() {
   });
   
   const { toast } = useToast();
+  const planLimits = usePlanLimits();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeFeatureName, setUpgradeFeatureName] = useState("");
+
+  const showUpgrade = (featureName: string) => {
+    setUpgradeFeatureName(featureName);
+    setShowUpgradeModal(true);
+  };
 
   const [state, setState] = useState<GameState>({
     sport: "basketball",
@@ -333,6 +344,17 @@ export default function Visualizer() {
 
   // Sport switcher
   const switchSport = (newSport: Sport) => {
+    // Check if user can switch sports
+    if (!planLimits.canSwitchSports && state.sport !== newSport) {
+      showUpgrade("Switch Sports");
+      toast({
+        title: "Upgrade Required",
+        description: `${planLimits.planName} plan is locked to one sport. Upgrade to switch between sports.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setState(prev => {
       const updates: Partial<GameState> = { sport: newSport };
       
@@ -1161,6 +1183,18 @@ export default function Visualizer() {
       return;
     }
 
+    // Check plan limits for hotkeys
+    const maxHotkeys = team === "home" ? planLimits.maxHotkeysHome : planLimits.maxHotkeysAway;
+    if (roster.length > maxHotkeys) {
+      showUpgrade("Player Hotkeys");
+      toast({
+        title: "Hotkey Limit Exceeded",
+        description: `${planLimits.planName} plan allows ${maxHotkeys} hotkey${maxHotkeys === 1 ? '' : 's'} per team. You tried to load ${roster.length}. Upgrade for more.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (roster.length > 0) {
       // Update roster
       if (team === "home") {
@@ -1342,6 +1376,23 @@ export default function Visualizer() {
   const handleVideoUpload = (team: "home" | "away", index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Check clip limit
+      const totalClips = state.homeVideoClips.filter(c => c).length + state.awayVideoClips.filter(c => c).length;
+      const currentClips = (team === "home" ? state.homeVideoClips : state.awayVideoClips).filter(c => c).length;
+      
+      // If this slot is empty, it would add a new clip
+      const isNewClip = !(team === "home" ? state.homeVideoClips[index] : state.awayVideoClips[index]);
+      
+      if (isNewClip && totalClips >= planLimits.maxClips) {
+        showUpgrade("Video Clips");
+        toast({
+          title: "Clip Limit Reached",
+          description: `${planLimits.planName} plan allows ${planLimits.maxClips} video clip${planLimits.maxClips === 1 ? '' : 's'}. Upgrade for more.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (!file.type.startsWith('video/')) {
         toast({ description: "Please select a valid video file", variant: "destructive" });
         return;
@@ -1415,6 +1466,16 @@ export default function Visualizer() {
 
   // Export functions
   const exportSessionJSON = () => {
+    if (!planLimits.canExport) {
+      showUpgrade("Export");
+      toast({
+        title: "Export Not Available",
+        description: `${planLimits.planName} plan doesn't include export. Upgrade to download your sessions.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     const exportData = {
       ...state,
       gameStats,
@@ -1430,6 +1491,16 @@ export default function Visualizer() {
   };
 
   const exportHistoryCSV = () => {
+    if (planLimits.exportType !== "full") {
+      showUpgrade("CSV Export");
+      toast({
+        title: "CSV Export Not Available",
+        description: `${planLimits.planName} plan doesn't include CSV export. Upgrade to Plus or higher for full export features.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     const headers = ['Timestamp', 'Type', 'Description'];
     const rows = playHistory.map(event => [
       new Date(event.timestamp).toISOString(),
@@ -1810,18 +1881,33 @@ export default function Visualizer() {
             <div className="text-xs space-y-1">
               <div className="flex gap-1 items-center">
                 <span className="w-12">+1 Key:</span>
-                <Input
-                  data-testid="input-hotkey-home1"
-                  value={state.scoreHotkeys.home1}
-                  onChange={(e) => {
-                    const key = e.target.value.slice(-1).toLowerCase();
-                    if (key && !/^[0-9a-z]$/.test(key)) return;
-                    setState(prev => ({ ...prev, scoreHotkeys: { ...prev.scoreHotkeys, home1: key } }));
-                  }}
-                  maxLength={1}
-                  className="h-6 w-12 text-xs text-center"
-                  placeholder="?"
-                />
+                <div className="relative">
+                  <Input
+                    data-testid="input-hotkey-home1"
+                    value={state.scoreHotkeys.home1}
+                    onChange={(e) => {
+                      if (!planLimits.allowedScoreButtons.includes(1)) {
+                        showUpgrade("Score Hotkeys");
+                        toast({
+                          title: "Feature Locked",
+                          description: `${planLimits.planName} plan only allows +2 and +3 hotkeys. Upgrade for +1 hotkeys.`,
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      const key = e.target.value.slice(-1).toLowerCase();
+                      if (key && !/^[0-9a-z]$/.test(key)) return;
+                      setState(prev => ({ ...prev, scoreHotkeys: { ...prev.scoreHotkeys, home1: key } }));
+                    }}
+                    maxLength={1}
+                    className="h-6 w-12 text-xs text-center"
+                    placeholder="?"
+                    disabled={!planLimits.allowedScoreButtons.includes(1)}
+                  />
+                  {!planLimits.allowedScoreButtons.includes(1) && (
+                    <Lock className="absolute right-1 top-1 w-3 h-3 text-muted-foreground" />
+                  )}
+                </div>
                 {state.sport !== "baseball" && (
                   <>
                     <span className="w-12 ml-2">+2 Key:</span>
@@ -1909,18 +1995,33 @@ export default function Visualizer() {
             <div className="text-xs space-y-1">
               <div className="flex gap-1 items-center">
                 <span className="w-12">+1 Key:</span>
-                <Input
-                  data-testid="input-hotkey-away1"
-                  value={state.scoreHotkeys.away1}
-                  onChange={(e) => {
-                    const key = e.target.value.slice(-1).toLowerCase();
-                    if (key && !/^[0-9a-z]$/.test(key)) return;
-                    setState(prev => ({ ...prev, scoreHotkeys: { ...prev.scoreHotkeys, away1: key } }));
-                  }}
-                  maxLength={1}
-                  className="h-6 w-12 text-xs text-center"
-                  placeholder="?"
-                />
+                <div className="relative">
+                  <Input
+                    data-testid="input-hotkey-away1"
+                    value={state.scoreHotkeys.away1}
+                    onChange={(e) => {
+                      if (!planLimits.allowedScoreButtons.includes(1)) {
+                        showUpgrade("Score Hotkeys");
+                        toast({
+                          title: "Feature Locked",
+                          description: `${planLimits.planName} plan only allows +2 and +3 hotkeys. Upgrade for +1 hotkeys.`,
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      const key = e.target.value.slice(-1).toLowerCase();
+                      if (key && !/^[0-9a-z]$/.test(key)) return;
+                      setState(prev => ({ ...prev, scoreHotkeys: { ...prev.scoreHotkeys, away1: key } }));
+                    }}
+                    maxLength={1}
+                    className="h-6 w-12 text-xs text-center"
+                    placeholder="?"
+                    disabled={!planLimits.allowedScoreButtons.includes(1)}
+                  />
+                  {!planLimits.allowedScoreButtons.includes(1) && (
+                    <Lock className="absolute right-1 top-1 w-3 h-3 text-muted-foreground" />
+                  )}
+                </div>
                 {state.sport !== "baseball" && (
                   <>
                     <span className="w-12 ml-2">+2 Key:</span>
@@ -2802,6 +2903,14 @@ export default function Visualizer() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        currentPlan={planLimits.currentPlan}
+        featureName={upgradeFeatureName}
+      />
     </div>
   );
 }
