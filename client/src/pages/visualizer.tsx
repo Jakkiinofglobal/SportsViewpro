@@ -1616,7 +1616,10 @@ export default function Visualizer() {
                 data-testid="button-logout"
                 size="icon"
                 variant="ghost"
-                onClick={() => logout()}
+                onClick={async () => {
+                  await logout();
+                  window.location.href = "/login";
+                }}
                 title="Logout"
                 className="h-8 w-8"
               >
