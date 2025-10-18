@@ -19,16 +19,17 @@ import { Request, Response } from "express";
 
 const { PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET } = process.env;
 
-if (!PAYPAL_CLIENT_ID) {
-  throw new Error("Missing PAYPAL_CLIENT_ID");
-}
-if (!PAYPAL_CLIENT_SECRET) {
-  throw new Error("Missing PAYPAL_CLIENT_SECRET");
+// Use placeholder values if credentials not set (for development)
+const clientId = PAYPAL_CLIENT_ID || "PLACEHOLDER_CLIENT_ID";
+const clientSecret = PAYPAL_CLIENT_SECRET || "PLACEHOLDER_SECRET";
+
+if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
+  console.warn("⚠️  PayPal credentials not set. Payment features will not work. Add PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET to enable payments.");
 }
 const client = new Client({
   clientCredentialsAuthCredentials: {
-    oAuthClientId: PAYPAL_CLIENT_ID,
-    oAuthClientSecret: PAYPAL_CLIENT_SECRET,
+    oAuthClientId: clientId,
+    oAuthClientSecret: clientSecret,
   },
   timeout: 0,
   environment:
@@ -52,7 +53,7 @@ const oAuthAuthorizationController = new OAuthAuthorizationController(client);
 
 export async function getClientToken() {
   const auth = Buffer.from(
-    `${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`,
+    `${clientId}:${clientSecret}`,
   ).toString("base64");
 
   const { result } = await oAuthAuthorizationController.requestToken(
