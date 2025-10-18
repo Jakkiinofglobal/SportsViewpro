@@ -981,65 +981,6 @@ export default function Visualizer() {
     // Draw ball
     drawBall(ctx);
     
-    // Draw pending shot/pass/hit indicator
-    if (pendingShotLocation) {
-      ctx.save();
-      ctx.strokeStyle = "#3b82f6";
-      ctx.fillStyle = "rgba(59, 130, 246, 0.2)";
-      ctx.lineWidth = 3;
-      const pulse = Math.sin(timestamp / 200) * 5 + 25;
-      ctx.beginPath();
-      ctx.arc(pendingShotLocation.x, pendingShotLocation.y, pulse, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      
-      // Cross hair
-      ctx.strokeStyle = "#3b82f6";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(pendingShotLocation.x - 20, pendingShotLocation.y);
-      ctx.lineTo(pendingShotLocation.x + 20, pendingShotLocation.y);
-      ctx.moveTo(pendingShotLocation.x, pendingShotLocation.y - 20);
-      ctx.lineTo(pendingShotLocation.x, pendingShotLocation.y + 20);
-      ctx.stroke();
-      
-      // Text hint
-      ctx.fillStyle = "#3b82f6";
-      ctx.font = "600 14px 'JetBrains Mono'";
-      ctx.textAlign = "center";
-      ctx.fillText("Press Enter", pendingShotLocation.x, pendingShotLocation.y - 40);
-      ctx.restore();
-    }
-    
-    if (pendingPassStart) {
-      ctx.save();
-      ctx.strokeStyle = "#10b981";
-      ctx.fillStyle = "rgba(16, 185, 129, 0.2)";
-      ctx.lineWidth = 3;
-      const pulse = Math.sin(timestamp / 200) * 5 + 20;
-      ctx.beginPath();
-      ctx.arc(pendingPassStart.x, pendingPassStart.y, pulse, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      
-      // Line to current ball position
-      ctx.setLineDash([5, 5]);
-      ctx.strokeStyle = "#10b981";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(pendingPassStart.x, pendingPassStart.y);
-      ctx.lineTo(ballPhysics.current.x, ballPhysics.current.y);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      
-      // Text hint
-      ctx.fillStyle = "#10b981";
-      ctx.font = "600 14px 'JetBrains Mono'";
-      ctx.textAlign = "center";
-      ctx.fillText("Press Enter", pendingPassStart.x, pendingPassStart.y - 30);
-      ctx.restore();
-    }
-    
     // Restore camera transformations
     ctx.restore();
     
@@ -1077,6 +1018,30 @@ export default function Visualizer() {
   }, [render]);
 
   // Keyboard
+  // Helper: Detect basketball shot zone (2pt, 3pt, FT)
+  const detectBasketballZone = (x: number, y: number): { points: number; zone: string } => {
+    const centerX = 960;
+    const centerY = 540;
+    
+    // Free throw lane area (approximate)
+    const inFtLane = Math.abs(x - centerX) < 120 && Math.abs(y - centerY) < 140;
+    if (inFtLane) {
+      return { points: 1, zone: "FT" };
+    }
+    
+    // 3-point line distance (approximate basketball court proportions)
+    // NBA 3-point line is ~23.75 feet from hoop, scaled to our 1920x1080 court
+    const hoopX = x < centerX ? 200 : 1720; // Left or right hoop
+    const hoopY = centerY;
+    const distToHoop = Math.sqrt(Math.pow(x - hoopX, 2) + Math.pow(y - hoopY, 2));
+    
+    if (distToHoop > 380) {
+      return { points: 3, zone: "3PT" };
+    }
+    
+    return { points: 2, zone: "2PT" };
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
@@ -1103,65 +1068,68 @@ export default function Visualizer() {
         return;
       }
       
-      // Enter key: Log shot/pass/hit (MADE)
-      // Shift+Enter: Log shot/pass/hit (MISSED)
+      // NEW SYSTEM: Enter key logs shot/pass/hit at CURRENT BALL POSITION
+      // Shift+Enter = MADE/COMPLETED (green, add points/yards)
+      // Enter alone = MISSED/INCOMPLETE (red, no points/yards)
       if (e.key === "Enter" && planLimits.canUseShotCharts) {
-        const made = !e.shiftKey;
+        e.preventDefault();
+        const made = e.shiftKey; // Shift = made/completed
         const currentState = stateRef.current;
         const currentTeam = currentState.possession;
+        const ballX = ballPhysics.current.x;
+        const ballY = ballPhysics.current.y;
         
-        if (currentState.sport === "basketball" && pendingShotLocation) {
+        // BASKETBALL: Log shot at ball position, auto-calculate points
+        if (currentState.sport === "basketball") {
+          const zone = detectBasketballZone(ballX, ballY);
           const shot: ShotEvent = {
             id: Date.now().toString(),
-            x: pendingShotLocation.x,
-            y: pendingShotLocation.y,
+            x: ballX,
+            y: ballY,
             made,
             playerName: currentState.carrierName || "Unknown",
             playerJersey: currentState.carrierNumber || "00",
             team: currentTeam,
             timestamp: Date.now(),
           };
-          setState(prev => ({ ...prev, basketballShots: [...prev.basketballShots, shot] }));
-          setPendingShotLocation(null);
-          toast({ description: `${made ? "Made" : "Missed"} shot logged!` });
-        } else if (currentState.sport === "football" && pendingPassStart) {
-          const dist = Math.sqrt(
-            Math.pow(ballPhysics.current.x - pendingPassStart.x, 2) +
-            Math.pow(ballPhysics.current.y - pendingPassStart.y, 2)
-          );
-          const pass: PassEvent = {
-            id: Date.now().toString(),
-            startX: pendingPassStart.x,
-            startY: pendingPassStart.y,
-            endX: ballPhysics.current.x,
-            endY: ballPhysics.current.y,
-            completed: made,
-            playerName: currentState.carrierName || "Unknown",
-            playerJersey: currentState.carrierNumber || "00",
-            team: currentTeam,
-            distance: Math.round(dist / 10),
-            timestamp: Date.now(),
-          };
-          setState(prev => ({ ...prev, footballPasses: [...prev.footballPasses, pass] }));
-          setPendingPassStart(null);
-          toast({ description: `${made ? "Completed" : "Incomplete"} pass logged!` });
-        } else if (currentState.sport === "baseball" && pendingShotLocation) {
-          // For baseball, Enter = single, Shift+Enter = out
-          const hit: HitEvent = {
-            id: Date.now().toString(),
-            x: pendingShotLocation.x,
-            y: pendingShotLocation.y,
-            result: made ? "single" : "out",
-            playerName: currentState.carrierName || "Unknown",
-            playerJersey: currentState.carrierNumber || "00",
-            team: currentTeam,
-            timestamp: Date.now(),
-          };
-          setState(prev => ({ ...prev, baseballHits: [...prev.baseballHits, hit] }));
-          setPendingShotLocation(null);
-          toast({ description: `${made ? "Hit" : "Out"} logged!` });
+          
+          setState(prev => {
+            const newShots = [...prev.basketballShots, shot];
+            let newScore = currentTeam === "home" ? prev.homeScore : prev.awayScore;
+            
+            // Add points if shot was made
+            if (made) {
+              newScore += zone.points;
+            }
+            
+            return {
+              ...prev,
+              basketballShots: newShots,
+              homeScore: currentTeam === "home" ? newScore : prev.homeScore,
+              awayScore: currentTeam === "away" ? newScore : prev.awayScore,
+            };
+          });
+          
+          toast({ 
+            description: made 
+              ? `${zone.zone} made! +${zone.points} pts for ${currentState.carrierName}` 
+              : `${zone.zone} missed by ${currentState.carrierName}` 
+          });
+          return;
         }
-        return;
+        
+        // FOOTBALL: Space=start, Control=pass, Alt=run
+        // TODO: Implement football yard tracking with modifiers
+        if (currentState.sport === "football") {
+          toast({ description: "Football tracking coming soon!" });
+          return;
+        }
+        
+        // BASEBALL: Need user input on logic
+        if (currentState.sport === "baseball") {
+          toast({ description: "Baseball tracking - what should this do?" });
+          return;
+        }
       }
       
       // Check for score hotkeys
@@ -1320,31 +1288,8 @@ export default function Visualizer() {
       
       mousePos.current = { x, y };
       
-      // Click: Track shot/pass/hit location (if plan allows)
-      if (planLimits.canUseShotCharts) {
-        if (state.sport === "basketball") {
-          setPendingShotLocation({ x, y });
-          toast({ description: "Shot location set. Press Enter (made) or Shift+Enter (missed)" });
-          return; // Don't drag ball when setting shot location
-        } else if (state.sport === "football") {
-          if (!pendingPassStart) {
-            setPendingPassStart({ x, y });
-            toast({ description: "Pass start set. Move ball to end position, then Enter (complete) or Shift+Enter (incomplete)" });
-            return;
-          } else {
-            // Second click sets end position via current ball position
-            toast({ description: "Pass end position ready. Press Enter (complete) or Shift+Enter (incomplete)" });
-            return;
-          }
-        } else if (state.sport === "baseball") {
-          setPendingShotLocation({ x, y });
-          toast({ description: "Hit location set. Press Enter (hit) or Shift+Enter (out)" });
-          return; // Don't drag ball when setting hit location
-        }
-      }
-      
-      // Check logo drag
-      if (dragLogoMode.current && logoImage && state.logoX !== null && state.logoY !== null) {
+      // Check logo drag first (left-click only)
+      if (e.button === 0 && dragLogoMode.current && logoImage && state.logoX !== null && state.logoY !== null) {
         const w = logoImage.width * state.logoScale;
         const h = logoImage.height * state.logoScale;
         if (x >= state.logoX - w/2 - 5 && x <= state.logoX + w/2 + 5 &&
@@ -1354,10 +1299,11 @@ export default function Visualizer() {
         }
       }
       
-      // Check ball drag
+      // Right-click OR close to ball = drag ball (always enabled)
       const dist = Math.sqrt((x - ballPhysics.current.x) ** 2 + (y - ballPhysics.current.y) ** 2);
-      if (dist < state.ballSize + 10) {
+      if (e.button === 2 || dist < state.ballSize + 10) {
         isDraggingBall.current = true;
+        e.preventDefault();
       }
     };
     
@@ -1387,14 +1333,20 @@ export default function Visualizer() {
       isDraggingLogo.current = false;
     };
     
+    const handleContextMenu = (e: Event) => {
+      e.preventDefault(); // Prevent right-click menu
+    };
+    
     canvas.addEventListener("mousedown", handleMouseDown);
     canvas.addEventListener("mousemove", handleMouseMove);
     canvas.addEventListener("mouseup", handleMouseUp);
+    canvas.addEventListener("contextmenu", handleContextMenu);
     
     return () => {
       canvas.removeEventListener("mousedown", handleMouseDown);
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("mouseup", handleMouseUp);
+      canvas.removeEventListener("contextmenu", handleContextMenu);
     };
   }, [state]);
 
