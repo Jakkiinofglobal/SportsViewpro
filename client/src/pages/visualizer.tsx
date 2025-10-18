@@ -1865,11 +1865,72 @@ export default function Visualizer() {
           {state.playerHotkeys.length > 0 && (
             <div className="border-t pt-2">
               <div className="text-xs text-muted-foreground mb-1">Active Hotkeys:</div>
-              <div className="text-xs space-y-1">
+              <div className="text-xs space-y-2">
                 {state.playerHotkeys.filter(h => h.hotkey).map(h => (
-                  <div key={h.jersey} className="flex justify-between">
+                  <div key={h.jersey} className="flex justify-between items-center gap-2">
                     <span className="font-bold">{h.hotkey.toUpperCase()}</span>
-                    <span className="font-mono">{h.name} #{h.jersey}</span>
+                    <span className="font-mono flex-1">{h.name} #{h.jersey}</span>
+                    {planLimits.canUsePlayerImages ? (
+                      <div className="relative">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          id={`player-image-${h.jersey}`}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                const dataURL = event.target?.result as string;
+                                setState(prev => ({
+                                  ...prev,
+                                  playerHotkeys: prev.playerHotkeys.map(hotkey =>
+                                    hotkey.jersey === h.jersey ? { ...hotkey, imageDataURL: dataURL } : hotkey
+                                  )
+                                }));
+                                toast({ description: `Image uploaded for ${h.name}` });
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                        <label 
+                          htmlFor={`player-image-${h.jersey}`}
+                          className="cursor-pointer"
+                        >
+                          {h.imageDataURL ? (
+                            <img 
+                              src={h.imageDataURL} 
+                              alt={h.name}
+                              className="w-6 h-6 rounded-full object-cover border border-primary"
+                            />
+                          ) : (
+                            <Button
+                              data-testid={`button-upload-image-${h.jersey}`}
+                              size="sm"
+                              variant="outline"
+                              className="h-6 w-6 p-0"
+                              asChild
+                            >
+                              <span>
+                                <Upload className="h-3 w-3" />
+                              </span>
+                            </Button>
+                          )}
+                        </label>
+                      </div>
+                    ) : (
+                      <Button
+                        data-testid={`button-locked-image-${h.jersey}`}
+                        size="sm"
+                        variant="outline"
+                        className="h-6 w-6 p-0"
+                        onClick={() => showUpgrade("Player Images")}
+                      >
+                        <Lock className="h-3 w-3" />
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>
