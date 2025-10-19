@@ -507,23 +507,12 @@ export default function Visualizer() {
     
     // Basketball hoops (draw on top of image, aligned with court image hoops)
     const drawHoop = (x: number) => {
-      // Rim
+      // Rim only, no net
       ctx.strokeStyle = "#ff6600";
       ctx.lineWidth = 6;
       ctx.beginPath();
       ctx.arc(x, 540, 25, 0, Math.PI * 2);
       ctx.stroke();
-      
-      // Net lines
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
-      ctx.lineWidth = 2;
-      for (let i = 0; i < 8; i++) {
-        const angle = (i / 8) * Math.PI * 2;
-        ctx.beginPath();
-        ctx.moveTo(x + Math.cos(angle) * 25, 540 + Math.sin(angle) * 25);
-        ctx.lineTo(x + Math.cos(angle) * 20, 540 + 35);
-        ctx.stroke();
-      }
     };
     
     drawHoop(240);  // Left hoop - moved inward toward center
