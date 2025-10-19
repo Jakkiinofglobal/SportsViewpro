@@ -1437,12 +1437,9 @@ export default function Visualizer() {
     const errors: string[] = [];
     const usedHotkeys = new Set<string>();
 
-    console.log(`🔍 Parsing ${team} team input:`, { totalLines: lines.length, lines });
-
     for (const line of lines) {
       // Format: "Name,#number,hotkey" or "Name,#number" or "Name" (comma-separated)
       const parts = line.split(",").map(p => p.trim());
-      console.log(`🔍 Line: "${line}" → Parts:`, parts, `(length: ${parts.length})`);
       
       let name = "";
       let jersey = "";
@@ -1494,10 +1491,7 @@ export default function Visualizer() {
         continue;
       }
 
-      // Add to roster regardless of hotkey
-      roster.push(jersey);
-
-      // Validate hotkey (if provided)
+      // Validate hotkey (if provided) before adding to roster
       if (hotkey && hotkey.length > 0) {
         if (!/^[0-9a-z]$/.test(hotkey.toLowerCase())) {
           errors.push(`Invalid hotkey "${hotkey}" (must be 0-9 or a-z) in: "${line}"`);
@@ -1523,6 +1517,9 @@ export default function Visualizer() {
         usedHotkeys.add(hotkey.toLowerCase());
         hotkeys.push({ jersey, name, hotkey: hotkey.toLowerCase() });
       }
+      
+      // Add to roster regardless of hotkey (after validation passes)
+      roster.push(jersey);
     }
 
     // All-or-nothing: if there are ANY errors, don't load anything
@@ -1534,13 +1531,13 @@ export default function Visualizer() {
       return;
     }
 
-    // Check plan limits for hotkeys
+    // Check plan limits for hotkeys (only count players with assigned hotkeys)
     const maxHotkeys = team === "home" ? planLimits.maxHotkeysHome : planLimits.maxHotkeysAway;
-    if (roster.length > maxHotkeys) {
+    if (hotkeys.length > maxHotkeys) {
       showUpgrade("Player Hotkeys");
       toast({
         title: "Hotkey Limit Exceeded",
-        description: `${planLimits.planName} plan allows ${maxHotkeys} hotkey${maxHotkeys === 1 ? '' : 's'} per team. You tried to load ${roster.length}. Upgrade for more.`,
+        description: `${planLimits.planName} plan allows ${maxHotkeys} hotkey${maxHotkeys === 1 ? '' : 's'} per team. You tried to assign ${hotkeys.length} hotkeys. Upgrade for more.`,
         variant: "destructive",
       });
       return;
