@@ -15,6 +15,7 @@ export function usePlanLimits() {
       exportType: false as false | "basic" | "full",
       canUsePlayerImages: false,
       canUseShotCharts: false,
+      maxSoundSlots: 3,
       planName: "None",
       currentPlan: "demo",
     };
@@ -32,6 +33,7 @@ export function usePlanLimits() {
     exportType: plan.export,
     canUsePlayerImages: plan.playerImages,
     canUseShotCharts: plan.shotCharts,
+    maxSoundSlots: plan.soundSlots,
     planName: plan.name,
     currentPlan: user.plan,
   };

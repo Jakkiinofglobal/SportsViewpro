@@ -178,6 +178,9 @@ interface GameState {
   homeVideoClips: string[];
   awayVideoClips: string[];
   
+  // Soundboard
+  soundSlots: Array<{ name: string; dataURL: string } | null>;
+  
   // Shot tracking
   basketballShots: ShotEvent[];
   footballPasses: PassEvent[];
@@ -295,6 +298,7 @@ export default function Visualizer() {
     awayEndzoneLogoScale: 0.4,
     homeVideoClips: [],
     awayVideoClips: [],
+    soundSlots: Array(8).fill(null),
     basketballShots: [],
     footballPasses: [],
     footballPlays: [],
@@ -405,6 +409,7 @@ export default function Visualizer() {
           ...data,
           homeVideoClips: data.homeVideoClips || [],
           awayVideoClips: data.awayVideoClips || [],
+          soundSlots: data.soundSlots || Array(8).fill(null),
           playerHotkeys: data.playerHotkeys || [],
           scoreHotkeys: data.scoreHotkeys || {
             home1: "",
@@ -2236,6 +2241,7 @@ export default function Visualizer() {
         ...data,
         homeVideoClips: data.homeVideoClips || [],
         awayVideoClips: data.awayVideoClips || [],
+        soundSlots: data.soundSlots || Array(8).fill(null),
         basketballQuarter: data.basketballQuarter || 1,
         quarter: data.quarter || 1,
         playerLabelScale: data.playerLabelScale ?? 1.0,
@@ -2419,6 +2425,60 @@ export default function Visualizer() {
         [team === "home" ? "homeVideoClips" : "awayVideoClips"]: clips
       };
     });
+  };
+
+  // Soundboard handlers
+  const handleSoundUpload = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Check if slot is locked based on plan
+      if (index >= planLimits.maxSoundSlots) {
+        showUpgrade("Soundboard Slots");
+        toast({
+          title: "Soundboard Slot Locked",
+          description: `${planLimits.planName} plan allows ${planLimits.maxSoundSlots} soundboard slot${planLimits.maxSoundSlots === 1 ? '' : 's'}. Upgrade to unlock more.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!file.type.startsWith('audio/')) {
+        toast({ description: "Please select a valid audio file", variant: "destructive" });
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataURL = event.target?.result as string;
+        setState(prev => {
+          const slots = [...prev.soundSlots];
+          slots[index] = { name: file.name, dataURL };
+          return { ...prev, soundSlots: slots };
+        });
+        toast({ description: `Sound "${file.name}" uploaded to slot ${index + 1}` });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const playSoundFile = (index: number) => {
+    const sound = state.soundSlots[index];
+    if (sound) {
+      const audio = new Audio(sound.dataURL);
+      audio.play().catch(err => {
+        toast({ description: "Failed to play sound", variant: "destructive" });
+        console.error("Sound playback error:", err);
+      });
+    }
+  };
+
+  const removeSoundSlot = (index: number) => {
+    setState(prev => {
+      const slots = [...prev.soundSlots];
+      slots[index] = null;
+      return { ...prev, soundSlots: slots };
+    });
+    toast({ description: `Sound removed from slot ${index + 1}` });
   };
 
   // Sound effects using Web Audio API
@@ -3035,6 +3095,84 @@ export default function Visualizer() {
                 ))}
               </div>
             </div>
+          </div>
+        </Card>
+
+        {/* Soundboard */}
+        <Card className="p-4 space-y-3">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Soundboard</Label>
+          
+          <div className="grid grid-cols-2 gap-2">
+            {Array(8).fill(null).map((_, index) => {
+              const isLocked = index >= planLimits.maxSoundSlots;
+              const sound = state.soundSlots[index];
+              
+              return (
+                <div key={`sound-${index}`} className="space-y-1">
+                  <div className="flex items-center gap-1">
+                    {isLocked ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full opacity-50 cursor-not-allowed"
+                        onClick={() => {
+                          showUpgrade("Soundboard Slots");
+                          toast({
+                            title: "Soundboard Slot Locked",
+                            description: `Upgrade to unlock this slot`,
+                            variant: "destructive",
+                          });
+                        }}
+                        data-testid={`button-sound-locked-${index}`}
+                      >
+                        <Lock className="h-3 w-3 mr-1" /> Slot {index + 1}
+                      </Button>
+                    ) : sound ? (
+                      <div className="flex flex-col gap-1 w-full">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={() => playSoundFile(index)}
+                          className="w-full text-xs"
+                          data-testid={`button-play-sound-${index}`}
+                        >
+                          ▶ {sound.name.substring(0, 12)}...
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => removeSoundSlot(index)}
+                          className="w-full text-xs"
+                          data-testid={`button-remove-sound-${index}`}
+                        >
+                          ✕ Remove
+                        </Button>
+                      </div>
+                    ) : (
+                      <label className="w-full">
+                        <Input
+                          type="file"
+                          accept="audio/*"
+                          onChange={(e) => handleSoundUpload(index, e)}
+                          className="hidden"
+                          data-testid={`input-sound-${index}`}
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full text-xs"
+                          asChild
+                        >
+                          <span>
+                            <Upload className="h-3 w-3 mr-1" /> Slot {index + 1}
+                          </span>
+                        </Button>
+                      </label>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </Card>
 

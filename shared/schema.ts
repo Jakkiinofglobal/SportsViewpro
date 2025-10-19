@@ -81,6 +81,7 @@ export const PLANS = {
     export: false,
     playerImages: false,
     shotCharts: false,
+    soundSlots: 3,
   },
   studioMonthly: {
     id: "studioMonthly",
@@ -92,6 +93,7 @@ export const PLANS = {
     export: "basic",
     playerImages: false,
     shotCharts: false,
+    soundSlots: 3,
   },
   plusMonthly: {
     id: "plusMonthly",
@@ -103,6 +105,7 @@ export const PLANS = {
     export: "full",
     playerImages: false,
     shotCharts: true,
+    soundSlots: 8,
   },
   creatorYearly: {
     id: "creatorYearly",
@@ -114,6 +117,7 @@ export const PLANS = {
     export: "full",
     playerImages: true,
     shotCharts: true,
+    soundSlots: 8,
   },
   proOneTime: {
     id: "proOneTime",
@@ -125,6 +129,7 @@ export const PLANS = {
     export: "full",
     playerImages: true,
     shotCharts: true,
+    soundSlots: 8,
   },
 } as const;
 
