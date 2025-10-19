@@ -695,7 +695,7 @@ export default function Visualizer() {
       
       // Apply scales
       const fontSize = 16 * state.playerLabelScale;
-      const imageSize = 40 * state.playerImageScale;
+      const imageSize = 80 * state.playerImageScale;
       const labelHeight = hasName ? 50 * state.playerLabelScale : 24 * state.playerLabelScale;
       const labelWidth = hasImage ? 
         Math.max(150 * state.playerLabelScale, (hasName ? state.carrierName.length * 10 * state.playerLabelScale : 50 * state.playerLabelScale) + imageSize + 10) : 
