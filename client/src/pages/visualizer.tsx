@@ -1490,9 +1490,21 @@ export default function Visualizer() {
 
       // Update hotkeys (merge with existing hotkeys from other team)
       setState(prev => {
-        const otherTeamHotkeys = prev.playerHotkeys.filter(h => 
-          team === "home" ? !roster.includes(h.jersey) : roster.includes(h.jersey)
-        );
+        // Keep only the OTHER team's hotkeys, remove current team's old hotkeys
+        const otherTeamHotkeys = prev.playerHotkeys.filter(h => {
+          if (team === "home") {
+            // Loading home team: keep only away team hotkeys
+            return prev.awayRoster.includes(h.jersey);
+          } else {
+            // Loading away team: keep only home team hotkeys
+            return prev.homeRoster.includes(h.jersey);
+          }
+        });
+        
+        console.log(`Loading ${team} team with ${roster.length} players`);
+        console.log(`Other team hotkeys kept:`, otherTeamHotkeys);
+        console.log(`New hotkeys:`, hotkeys);
+        
         return { ...prev, playerHotkeys: [...otherTeamHotkeys, ...hotkeys] };
       });
 
