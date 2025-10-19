@@ -75,6 +75,17 @@ interface FootballPlay {
   timestamp: number;
 }
 
+interface BaseballHit {
+  id: string;
+  x: number;
+  y: number;
+  made: boolean; // true = hit, false = strike
+  playerName: string;
+  playerJersey: string;
+  team: "home" | "away";
+  timestamp: number;
+}
+
 interface HitEvent {
   id: string;
   x: number;
@@ -171,7 +182,7 @@ interface GameState {
   basketballShots: ShotEvent[];
   footballPasses: PassEvent[];
   footballPlays: FootballPlay[];
-  baseballHits: HitEvent[];
+  baseballHits: BaseballHit[];
   
   // Player label scales
   playerLabelScale: number;
@@ -1163,6 +1174,8 @@ export default function Visualizer() {
           toast({ description: "Shot ready! Press Y (make) or X (miss)" });
         } else if (stateRef.current.sport === "football") {
           toast({ description: "Play ready! Press Y (rush) or X (pass)" });
+        } else if (stateRef.current.sport === "baseball") {
+          toast({ description: "Ready to log! Press Y (hit) or X (strike)" });
         }
       }
 
@@ -1236,6 +1249,32 @@ export default function Visualizer() {
           setCurrentPlayYards(0);
           setWaitingForShotResult(false);
           toast({ description: `Rush: ${currentState.carrierName} ${yards > 0 ? '+' : ''}${yards} yards` });
+        } else if (currentState.sport === "baseball") {
+          const hit: BaseballHit = {
+            id: Date.now().toString(),
+            x: ballX,
+            y: ballY,
+            made: true,
+            playerName: currentState.atBatName || "Unknown",
+            playerJersey: currentState.atBatNumber || "00",
+            team: currentTeam,
+            timestamp: Date.now(),
+          };
+          
+          setState(prev => ({
+            ...prev,
+            baseballHits: [...prev.baseballHits, hit]
+          }));
+          
+          setPlayHistory(prev => [{
+            id: hit.id,
+            timestamp: hit.timestamp,
+            type: "play" as const,
+            description: `${currentState.atBatName} recorded a HIT`
+          }, ...prev].slice(0, 100));
+          
+          setWaitingForShotResult(false);
+          toast({ description: `HIT by ${currentState.atBatName}!` });
         }
       }
 
@@ -1299,6 +1338,32 @@ export default function Visualizer() {
           setCurrentPlayYards(0);
           setWaitingForShotResult(false);
           toast({ description: `Pass: ${currentState.carrierName} ${yards > 0 ? '+' : ''}${yards} yards` });
+        } else if (currentState.sport === "baseball") {
+          const hit: BaseballHit = {
+            id: Date.now().toString(),
+            x: ballX,
+            y: ballY,
+            made: false,
+            playerName: currentState.atBatName || "Unknown",
+            playerJersey: currentState.atBatNumber || "00",
+            team: currentTeam,
+            timestamp: Date.now(),
+          };
+          
+          setState(prev => ({
+            ...prev,
+            baseballHits: [...prev.baseballHits, hit]
+          }));
+          
+          setPlayHistory(prev => [{
+            id: hit.id,
+            timestamp: hit.timestamp,
+            type: "play" as const,
+            description: `${currentState.atBatName} swung and missed (STRIKE)`
+          }, ...prev].slice(0, 100));
+          
+          setWaitingForShotResult(false);
+          toast({ description: `STRIKE by ${currentState.atBatName}` });
         }
       }
 
@@ -1545,10 +1610,47 @@ export default function Visualizer() {
           return;
         }
         
-        // BASEBALL: TODO
+        // BASEBALL: Log hit (Z) or strike (X)
         if (currentState.sport === "baseball") {
+          const isHit = e.key.toLowerCase() === "z";
+          
+          const hit: BaseballHit = {
+            id: Date.now().toString(),
+            x: ballX,
+            y: ballY,
+            made: isHit,
+            playerName: currentState.atBatName || "Unknown",
+            playerJersey: currentState.atBatNumber || "00",
+            team: currentTeam,
+            timestamp: Date.now(),
+          };
+          
+          console.log(`⚾ Logging baseball ${isHit ? "hit" : "strike"}:`, hit);
+          
+          // Save to state
+          setState(prev => ({
+            ...prev,
+            baseballHits: [...prev.baseballHits, hit]
+          }));
+          
+          // Add to play history
+          setPlayHistory(prev => [{
+            id: hit.id,
+            timestamp: hit.timestamp,
+            type: "play" as const,
+            description: isHit 
+              ? `${currentState.atBatName} recorded a HIT` 
+              : `${currentState.atBatName} swung and missed (STRIKE)`
+          }, ...prev].slice(0, 100));
+          
+          // Reset waiting state
           setWaitingForShotResult(false);
-          toast({ description: "Baseball tracking - what should this do?" });
+          
+          toast({ 
+            description: isHit 
+              ? `HIT by ${currentState.atBatName}!` 
+              : `STRIKE by ${currentState.atBatName}` 
+          });
           return;
         }
       }
