@@ -1552,18 +1552,72 @@ export default function Visualizer() {
 
   const clearTeamPlayers = (team: "home" | "away") => {
     if (team === "home") {
-      setState(prev => ({
-        ...prev,
-        homeRoster: [],
-        playerHotkeys: prev.playerHotkeys.filter(h => !prev.homeRoster.includes(h.jersey))
-      }));
+      setState(prev => {
+        // Check if current ball carrier belongs to home team
+        const isCarrierFromHomeTeam = prev.carrierNumber && prev.homeRoster.includes(prev.carrierNumber);
+        
+        // Clear ball carrier if they belong to the cleared team
+        const updates: Partial<GameState> = {
+          homeRoster: [],
+          playerHotkeys: prev.playerHotkeys.filter(h => !prev.homeRoster.includes(h.jersey)),
+        };
+        
+        if (isCarrierFromHomeTeam) {
+          updates.carrierNumber = "";
+          updates.carrierName = "";
+        }
+        
+        // For Baseball: Clear runners if they belong to home team
+        if (prev.sport === "baseball") {
+          const newRunners = { ...prev.runners };
+          if (prev.runners.first && prev.homeRoster.includes(prev.runners.first)) {
+            newRunners.first = "";
+          }
+          if (prev.runners.second && prev.homeRoster.includes(prev.runners.second)) {
+            newRunners.second = "";
+          }
+          if (prev.runners.third && prev.homeRoster.includes(prev.runners.third)) {
+            newRunners.third = "";
+          }
+          updates.runners = newRunners;
+        }
+        
+        return { ...prev, ...updates };
+      });
       setHomePlayersInput("");
     } else {
-      setState(prev => ({
-        ...prev,
-        awayRoster: [],
-        playerHotkeys: prev.playerHotkeys.filter(h => !prev.awayRoster.includes(h.jersey))
-      }));
+      setState(prev => {
+        // Check if current ball carrier belongs to away team
+        const isCarrierFromAwayTeam = prev.carrierNumber && prev.awayRoster.includes(prev.carrierNumber);
+        
+        // Clear ball carrier if they belong to the cleared team
+        const updates: Partial<GameState> = {
+          awayRoster: [],
+          playerHotkeys: prev.playerHotkeys.filter(h => !prev.awayRoster.includes(h.jersey)),
+        };
+        
+        if (isCarrierFromAwayTeam) {
+          updates.carrierNumber = "";
+          updates.carrierName = "";
+        }
+        
+        // For Baseball: Clear runners if they belong to away team
+        if (prev.sport === "baseball") {
+          const newRunners = { ...prev.runners };
+          if (prev.runners.first && prev.awayRoster.includes(prev.runners.first)) {
+            newRunners.first = "";
+          }
+          if (prev.runners.second && prev.awayRoster.includes(prev.runners.second)) {
+            newRunners.second = "";
+          }
+          if (prev.runners.third && prev.awayRoster.includes(prev.runners.third)) {
+            newRunners.third = "";
+          }
+          updates.runners = newRunners;
+        }
+        
+        return { ...prev, ...updates };
+      });
       setAwayPlayersInput("");
     }
     toast({ description: `Cleared ${team} roster and hotkeys` });
