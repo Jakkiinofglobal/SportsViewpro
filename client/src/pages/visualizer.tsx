@@ -523,8 +523,8 @@ export default function Visualizer() {
       ctx.stroke();
     };
     
-    drawHoop(240);  // Left hoop - moved inward toward center
-    drawHoop(1680); // Right hoop - moved inward toward center
+    drawHoop(220);  // Left hoop - aligned with backboard
+    drawHoop(1700); // Right hoop - aligned with backboard
   };
 
   const drawFootballField = (ctx: CanvasRenderingContext2D) => {
@@ -997,7 +997,7 @@ export default function Visualizer() {
     
     // 3-point line distance (approximate basketball court proportions)
     // NBA 3-point line is ~23.75 feet from hoop, scaled to our 1920x1080 court
-    const hoopX = x < centerX ? 240 : 1680; // Left or right hoop (moved inward toward center)
+    const hoopX = x < centerX ? 220 : 1700; // Left or right hoop (aligned with backboard)
     const hoopY = centerY;
     const distToHoop = Math.sqrt(Math.pow(x - hoopX, 2) + Math.pow(y - hoopY, 2));
     
@@ -3517,9 +3517,9 @@ export default function Visualizer() {
                       {/* Court background image */}
                       <image href={basketballCourtImage} x="0" y="0" width="1920" height="1080" preserveAspectRatio="none"/>
                       
-                      {/* Hoops - moved inward toward center, no backboards, smaller size */}
-                      <circle cx="240" cy="540" r="20" stroke="#ff6600" strokeWidth="8" fill="none"/>
-                      <circle cx="1680" cy="540" r="20" stroke="#ff6600" strokeWidth="8" fill="none"/>
+                      {/* Hoops - aligned with backboards, smaller size */}
+                      <circle cx="220" cy="540" r="20" stroke="#ff6600" strokeWidth="8" fill="none"/>
+                      <circle cx="1700" cy="540" r="20" stroke="#ff6600" strokeWidth="8" fill="none"/>
                       
                       {/* Shots */}
                       {filteredShots.map(shot => (
