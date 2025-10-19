@@ -1505,12 +1505,33 @@ export default function Visualizer() {
       }
       
       // TWO-STEP SYSTEM: 
-      // Step 1: Left-click on ball → Ready to log
+      // Step 1: Right-click ball / RT button / Enter key → Ready to log
       // Step 2: Press Z for made, X for missed, Escape to cancel
+      
+      // Step 1: Enter key captures current ball location for logging
+      if (e.key === "Enter" && !waitingForShotResultRef.current) {
+        e.preventDefault();
+        const currentState = stateRef.current;
+        const canCapture = currentState.sport === "football" || planLimits.canUseShotCharts;
+        
+        if (canCapture) {
+          setPendingShotLocation({ x: ballPhysics.current.x, y: ballPhysics.current.y });
+          setWaitingForShotResult(true);
+          toast({ 
+            description: currentState.sport === "basketball" 
+              ? "Ready to log! Press Z (make) or X (miss)" 
+              : currentState.sport === "football"
+              ? "Ready to log! Press Z (rush) or X (pass)"
+              : "Ready to log! Press Z (hit) or X (strike)"
+          });
+        }
+        return;
+      }
       
       // Cancel shot logging if Escape pressed
       if (waitingForShotResultRef.current && e.key === "Escape") {
         setWaitingForShotResult(false);
+        setPendingShotLocation(null);
         toast({ description: "Shot logging cancelled" });
         return;
       }
