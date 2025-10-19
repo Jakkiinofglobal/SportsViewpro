@@ -65,6 +65,22 @@ SportSight is a full-stack application leveraging a modern web architecture.
 
 ## Recent Updates (Oct 19, 2025)
 
+### Team Loading & Hotkey Management Improvements
+- **Flexible CSV Format**: New comma-separated format for loading entire rosters at once
+  - Format: `Name,#number,hotkey` (e.g., `Jaylin Williams,#6,k`)
+  - Optional hotkeys: `Name,#number` loads player without hotkey
+  - Backward compatible with old format
+- **Hotkey Limit Fix**: Plan limits now only count players WITH hotkeys assigned (not entire roster)
+- **Organized Hotkey Display**: Active hotkeys now divided into Home Team and Away Team sections
+  - Each team section shows team name header
+  - Player image upload buttons for each player (Creator/Pro plans)
+- **Clear Ball Carrier Button**: Added button to remove current ball carrier label from canvas
+  - Appears only when a carrier is active
+  - Sport-specific text (Ball Carrier vs At-Bat)
+- **Clear Team Enhancement**: Clearing a team now also clears ball carrier and base runners if they belong to that team
+
+## Previous Updates (Oct 19, 2025)
+
 ### Basketball Hoop Refinements & Player Label Scaling
 - **Hoop Positioning**: Orange hoops positioned at x=230 and x=1690, perfectly aligned with court image backboards
   - Reduced hoop radius from 25px to 20px for more accurate court image alignment
