@@ -63,7 +63,30 @@ SportSight is a full-stack application leveraging a modern web architecture.
 *   **Frontend Data Fetching:** TanStack Query
 *   **Frontend Routing:** Wouter
 
-## Recent Updates (Oct 18, 2025)
+## Recent Updates (Oct 19, 2025)
+
+### Football Yardage Tracking System
+- **New Football Interaction Model**: Real-time yardage tracking with keyboard controls
+  - Press **+ (Plus)** to add 5 yards to current play
+  - Press **- (Minus)** to subtract 1 yard from current play
+  - Press **Z** to log play as a Rush with current yardage
+  - Press **X** to log play as a Pass with current yardage
+  - Counter resets to 0 after logging each play
+- **Current Play Card**: Visual display in Football mode showing real-time yards counter with color coding
+  - Green text for positive yardage
+  - Red text for negative yardage
+  - Updates live as +/- keys are pressed
+- **Pass/Rush Chart Modal**: Redesigned to display table-based analytics
+  - Two stat cards: Rushing stats (plays, total yards, avg) and Passing stats (plays, total yards, avg)
+  - Sortable table showing play type (Rush/Pass), player, yards, and timestamp
+  - Color-coded badges: Blue for Rush, Green for Pass
+  - Yards column color-coded: Green for gains, Red for losses
+  - Team and player filtering with dropdown selectors
+- **Data Structure**: New `FootballPlay` interface with type (rush/pass), yards, player info, team, and timestamp
+- **Data Persistence**: `footballPlays` array stored in localStorage with auto-save every 1 second
+- **Keyboard Blocking**: Z, X, +, -, _, = keys blocked from player hotkey assignment to prevent conflicts
+
+## Previous Updates (Oct 18, 2025)
 
 ### Shot Chart Redesign with Enter Key Tracking
 - **New Interaction Model**: Changed from left/right-click (conflicted with Windows screenshot tool) to Enter key system
