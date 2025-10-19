@@ -2269,7 +2269,12 @@ export default function Visualizer() {
 
         {/* Scoreboard */}
         <Card className="p-4 space-y-3">
-          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Scoreboard</Label>
+          <div className="flex items-center justify-between">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Scoreboard</Label>
+            {state.sport === "basketball" && (
+              <span className="text-xs text-muted-foreground">(Press SPACE BAR before ea. FT)</span>
+            )}
+          </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm font-mono">{state.homeTeam}</span>
