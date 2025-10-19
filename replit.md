@@ -18,14 +18,14 @@ SportSight is a full-stack application utilizing a modern web architecture.
 *   **Layout:** Features a Top Bar, Bottom Bar, a fixed-width Left Control Panel with card-based controls, and a Right Stage Area centered around the canvas.
 
 **Technical Implementations:**
-*   **Core Mechanics:** Keyboard/mouse ball control, scoreboard management, team/roster handling, possession tracking, and game clock with speed multiplier.
-*   **Sport-Specific Features:** Basketball (shot clock, free throw system, 3PT% tracking), Football (play clock, down & distance, yardage tracking, Pass/Rush Chart), Baseball (Ball/Strike/Out counter, runner tracking, at-bat system, HIT/STRIKE logging).
+*   **Core Mechanics:** Keyboard/mouse ball control, scoreboard management, team/roster handling, possession tracking (with Shift key toggle), and game clock with speed multiplier.
+*   **Sport-Specific Features:** Basketball (shot clock, free throw system, 3PT% tracking), Football (play clock, down & distance, **automatic yardage calculation from ball movement**, Pass/Rush Chart), Baseball (Ball/Strike/Out counter, runner tracking, at-bat system, HIT/STRIKE logging).
 *   **Visual Enhancements:** Customizable home team logo, goal lighting effects, video clip system, and flexible camera controls.
 *   **Data & Analytics:** Real-time play history logging, game stats dashboard, sport-specific shot/pass/hit chart tracking with analytics modal, and session export functionality (JSON, CSV).
-*   **Input & Interaction:** Full gamepad/controller support, unified hotkey system for players, and two-step workflow for shot/pass/hit logging (Enter/RT/Right-click to capture → Z/Y for made, X for miss).
-*   **Audio:** Web Audio API for sound effects with volume controls.
+*   **Input & Interaction:** Full gamepad/controller support (including RB for possession toggle), unified hotkey system for players, and two-step workflow for shot/pass/hit logging (Enter/RT/Right-click to capture → Z/Y for made, X for miss). **Canvas focus management with small top-right "Click to activate" overlay when unfocused**.
+*   **Audio:** Web Audio API for sound effects with volume controls. **Soundboard integrated into session persistence with plan-based slot limits** (Demo/Studio: 3 slots, Pro+: 8 slots).
 *   **Monetization & Management:** Implemented with 5 subscription tiers controlling feature access, user authentication, and an admin dashboard for user management.
-*   **Persistence:** `localStorage` API for game session persistence, storing game state, settings, hotkeys, stats, and history.
+*   **Persistence:** `localStorage` API for game session persistence, storing game state, settings, hotkeys, stats, history, **and soundboard data**.
 *   **Sport Selection Sync:** User's selected sport from sport selection page syncs to visualizer state on mount via useEffect.
 
 **System Design Choices:**
