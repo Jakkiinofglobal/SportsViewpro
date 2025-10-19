@@ -24,7 +24,9 @@ import { UpgradeModal } from "@/components/upgrade-modal";
 import { usePlanLimits } from "@/hooks/use-plan-limits";
 import { Lock, LogOut, Settings, BarChart3, Upload } from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import courtImage from "@assets/OIP (3)_1760844620017.webp";
+import basketballCourtImage from "@assets/NBA-Court-Color_1760845084027.png";
+import footballFieldImage from "@assets/fb_1760845569955.webp";
+import baseballFieldImage from "@assets/Sport-Colored-Baseball-Field-Template_1760845569954.png";
 
 type Sport = "basketball" | "football" | "baseball";
 type SpeedMultiplier = 0.75 | 1.0 | 1.25 | 1.5;
@@ -306,7 +308,9 @@ export default function Visualizer() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const possessionStartTime = useRef<number>(Date.now());
   const stateRef = useRef(state);
-  const courtImageRef = useRef<HTMLImageElement | null>(null);
+  const basketballCourtImageRef = useRef<HTMLImageElement | null>(null);
+  const footballFieldImageRef = useRef<HTMLImageElement | null>(null);
+  const baseballFieldImageRef = useRef<HTMLImageElement | null>(null);
 
   // Sync currentPlayYards ref with state
   useEffect(() => {
@@ -318,13 +322,25 @@ export default function Visualizer() {
     waitingForShotResultRef.current = waitingForShotResult;
   }, [waitingForShotResult]);
 
-  // Load court background image
+  // Load sport field/court background images
   useEffect(() => {
-    const img = new Image();
-    img.onload = () => {
-      courtImageRef.current = img;
+    const basketballImg = new Image();
+    basketballImg.onload = () => {
+      basketballCourtImageRef.current = basketballImg;
     };
-    img.src = courtImage;
+    basketballImg.src = basketballCourtImage;
+
+    const footballImg = new Image();
+    footballImg.onload = () => {
+      footballFieldImageRef.current = footballImg;
+    };
+    footballImg.src = footballFieldImage;
+
+    const baseballImg = new Image();
+    baseballImg.onload = () => {
+      baseballFieldImageRef.current = baseballImg;
+    };
+    baseballImg.src = baseballFieldImage;
   }, []);
 
   // Track possession time
@@ -477,9 +493,9 @@ export default function Visualizer() {
   const drawBasketballCourt = (ctx: CanvasRenderingContext2D) => {
     const w = 1920, h = 1080;
     
-    // Draw court image if loaded, otherwise use gradient fallback
-    if (courtImageRef.current) {
-      ctx.drawImage(courtImageRef.current, 0, 0, w, h);
+    // Draw court image if loaded
+    if (basketballCourtImageRef.current) {
+      ctx.drawImage(basketballCourtImageRef.current, 0, 0, w, h);
     } else {
       // Fallback: Wood court gradient
       const gradient = ctx.createLinearGradient(0, 0, 0, h);
@@ -487,36 +503,9 @@ export default function Visualizer() {
       gradient.addColorStop(1, "#a67c52");
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, w, h);
-      
-      // Lines
-      ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = 4;
-      
-      // Border
-      ctx.strokeRect(100, 100, 1720, 880);
-      
-      // Center circle
-      ctx.beginPath();
-      ctx.arc(960, 540, 120, 0, Math.PI * 2);
-      ctx.stroke();
-      
-      // Center line
-      ctx.beginPath();
-      ctx.moveTo(960, 100);
-      ctx.lineTo(960, 980);
-      ctx.stroke();
-      
-      // 3-point arcs (simplified)
-      ctx.beginPath();
-      ctx.arc(200, 540, 400, -Math.PI/3, Math.PI/3);
-      ctx.stroke();
-      
-      ctx.beginPath();
-      ctx.arc(1720, 540, 400, Math.PI*2/3, Math.PI*4/3);
-      ctx.stroke();
     }
     
-    // Basketball hoops (always draw these on top)
+    // Basketball hoops (draw on top of image)
     const drawHoop = (x: number, backboardX: number) => {
       // Backboard
       ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
@@ -548,35 +537,16 @@ export default function Visualizer() {
   const drawFootballField = (ctx: CanvasRenderingContext2D) => {
     const w = 1920, h = 1080;
     
-    // Green field
-    ctx.fillStyle = "#2d5016";
-    ctx.fillRect(0, 0, w, h);
-    
-    // Sidelines
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 4;
-    ctx.strokeRect(100, 200, 1720, 680);
-    
-    // Yard lines every ~172px (10 yards)
-    for (let i = 1; i < 10; i++) {
-      const x = 100 + i * 172;
-      ctx.beginPath();
-      ctx.moveTo(x, 200);
-      ctx.lineTo(x, 880);
-      ctx.stroke();
-      
-      // Hash marks
-      ctx.lineWidth = 2;
-      for (let y = 200; y <= 880; y += 20) {
-        ctx.beginPath();
-        ctx.moveTo(x - 5, y);
-        ctx.lineTo(x + 5, y);
-        ctx.stroke();
-      }
-      ctx.lineWidth = 4;
+    // Draw field image if loaded
+    if (footballFieldImageRef.current) {
+      ctx.drawImage(footballFieldImageRef.current, 0, 0, w, h);
+    } else {
+      // Fallback: Green field
+      ctx.fillStyle = "#2d5016";
+      ctx.fillRect(0, 0, w, h);
     }
     
-    // Field goals at endzones
+    // Field goals at endzones (draw on top)
     const drawFieldGoal = (x: number) => {
       ctx.strokeStyle = "#ffcc00";
       ctx.lineWidth = 8;
@@ -607,65 +577,24 @@ export default function Visualizer() {
   const drawBaseballField = (ctx: CanvasRenderingContext2D) => {
     const w = 1920, h = 1080;
     
-    // Green outfield
-    ctx.fillStyle = "#2d5016";
-    ctx.fillRect(0, 0, w, h);
-    
-    // Dirt infield (diamond)
-    ctx.fillStyle = "#c19a6b";
-    ctx.beginPath();
-    ctx.moveTo(960, 900);
-    ctx.lineTo(500, 440);
-    ctx.lineTo(960, 180);
-    ctx.lineTo(1420, 440);
-    ctx.closePath();
-    ctx.fill();
-    
-    // Bases
-    const baseSize = 30;
-    const drawBase = (x: number, y: number) => {
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(x - baseSize/2, y - baseSize/2, baseSize, baseSize);
-    };
-    
-    drawBase(960, 900); // Home
-    drawBase(500, 440); // First
-    drawBase(960, 180); // Second
-    drawBase(1420, 440); // Third
-    
-    // Base direction arrows
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
-    ctx.lineWidth = 3;
-    const drawArrow = (x1: number, y1: number, x2: number, y2: number) => {
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
+    // Draw field image if loaded
+    if (baseballFieldImageRef.current) {
+      ctx.drawImage(baseballFieldImageRef.current, 0, 0, w, h);
+    } else {
+      // Fallback: Green outfield
+      ctx.fillStyle = "#2d5016";
+      ctx.fillRect(0, 0, w, h);
       
-      const angle = Math.atan2(y2 - y1, x2 - x1);
-      const arrowSize = 20;
+      // Dirt infield (diamond)
+      ctx.fillStyle = "#c19a6b";
       ctx.beginPath();
-      ctx.moveTo(x2, y2);
-      ctx.lineTo(x2 - arrowSize * Math.cos(angle - Math.PI/6), y2 - arrowSize * Math.sin(angle - Math.PI/6));
-      ctx.moveTo(x2, y2);
-      ctx.lineTo(x2 - arrowSize * Math.cos(angle + Math.PI/6), y2 - arrowSize * Math.sin(angle + Math.PI/6));
-      ctx.stroke();
-    };
-    
-    drawArrow(960, 870, 530, 470);
-    drawArrow(530, 440, 960, 210);
-    drawArrow(960, 210, 1390, 470);
-    drawArrow(1390, 440, 960, 870);
-    
-    // Pitcher's mound
-    ctx.fillStyle = "#a67c52";
-    ctx.beginPath();
-    ctx.arc(960, 670, 80, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Rubber (pitching plate)
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(945, 665, 30, 10);
+      ctx.moveTo(960, 900);
+      ctx.lineTo(500, 440);
+      ctx.lineTo(960, 180);
+      ctx.lineTo(1420, 440);
+      ctx.closePath();
+      ctx.fill();
+    }
   };
 
   const drawBall = (ctx: CanvasRenderingContext2D) => {
@@ -3558,7 +3487,7 @@ export default function Visualizer() {
                   <div className="relative w-full rounded-lg shadow-2xl overflow-hidden" style={{ paddingBottom: "56.25%" }}>
                     <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1920 1080">
                       {/* Court background image */}
-                      <image href={courtImage} x="0" y="0" width="1920" height="1080" preserveAspectRatio="none"/>
+                      <image href={basketballCourtImage} x="0" y="0" width="1920" height="1080" preserveAspectRatio="none"/>
                       
                       {/* Backboards */}
                       <rect x="95" y="480" width="10" height="120" fill="rgba(255, 255, 255, 0.9)"/>
