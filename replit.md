@@ -65,6 +65,15 @@ SportSight is a full-stack application leveraging a modern web architecture.
 
 ## Recent Updates (Oct 19, 2025)
 
+### Basketball Court Visual Enhancement
+- **Realistic Court Image**: Integrated professional basketball court image for both main canvas and Shot Chart modal
+  - Replaced gradient background with actual court texture showing wood floor and white line markings
+  - Image asset: `attached_assets/OIP (3)_1760844620017.webp`
+  - Canvas rendering uses `ctx.drawImage()` with fallback to gradient if image not loaded
+  - Shot Chart modal uses SVG `<image>` element for consistent appearance
+  - Hoops and backboards rendered on top of the court image in both locations
+- **Three-Point Line Fix**: Corrected SVG arc sweep direction in Shot Chart so three-point lines curve toward center of court (not behind goals)
+
 ### Football Yardage Tracking System
 - **Unified Two-Step Interaction Model**: Consistent workflow across Basketball and Football
   - **Step 1**: Adjust yardage with **+/-** keys (optional, independent of logging)

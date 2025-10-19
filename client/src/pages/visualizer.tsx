@@ -24,6 +24,7 @@ import { UpgradeModal } from "@/components/upgrade-modal";
 import { usePlanLimits } from "@/hooks/use-plan-limits";
 import { Lock, LogOut, Settings, BarChart3, Upload } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import courtImage from "@assets/OIP (3)_1760844620017.webp";
 
 type Sport = "basketball" | "football" | "baseball";
 type SpeedMultiplier = 0.75 | 1.0 | 1.25 | 1.5;
@@ -305,6 +306,7 @@ export default function Visualizer() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const possessionStartTime = useRef<number>(Date.now());
   const stateRef = useRef(state);
+  const courtImageRef = useRef<HTMLImageElement | null>(null);
 
   // Sync currentPlayYards ref with state
   useEffect(() => {
@@ -315,6 +317,15 @@ export default function Visualizer() {
   useEffect(() => {
     waitingForShotResultRef.current = waitingForShotResult;
   }, [waitingForShotResult]);
+
+  // Load court background image
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      courtImageRef.current = img;
+    };
+    img.src = courtImage;
+  }, []);
 
   // Track possession time
   useEffect(() => {
@@ -466,41 +477,46 @@ export default function Visualizer() {
   const drawBasketballCourt = (ctx: CanvasRenderingContext2D) => {
     const w = 1920, h = 1080;
     
-    // Wood court gradient
-    const gradient = ctx.createLinearGradient(0, 0, 0, h);
-    gradient.addColorStop(0, "#c19a6b");
-    gradient.addColorStop(1, "#a67c52");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, w, h);
+    // Draw court image if loaded, otherwise use gradient fallback
+    if (courtImageRef.current) {
+      ctx.drawImage(courtImageRef.current, 0, 0, w, h);
+    } else {
+      // Fallback: Wood court gradient
+      const gradient = ctx.createLinearGradient(0, 0, 0, h);
+      gradient.addColorStop(0, "#c19a6b");
+      gradient.addColorStop(1, "#a67c52");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, w, h);
+      
+      // Lines
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 4;
+      
+      // Border
+      ctx.strokeRect(100, 100, 1720, 880);
+      
+      // Center circle
+      ctx.beginPath();
+      ctx.arc(960, 540, 120, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // Center line
+      ctx.beginPath();
+      ctx.moveTo(960, 100);
+      ctx.lineTo(960, 980);
+      ctx.stroke();
+      
+      // 3-point arcs (simplified)
+      ctx.beginPath();
+      ctx.arc(200, 540, 400, -Math.PI/3, Math.PI/3);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.arc(1720, 540, 400, Math.PI*2/3, Math.PI*4/3);
+      ctx.stroke();
+    }
     
-    // Lines
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 4;
-    
-    // Border
-    ctx.strokeRect(100, 100, 1720, 880);
-    
-    // Center circle
-    ctx.beginPath();
-    ctx.arc(960, 540, 120, 0, Math.PI * 2);
-    ctx.stroke();
-    
-    // Center line
-    ctx.beginPath();
-    ctx.moveTo(960, 100);
-    ctx.lineTo(960, 980);
-    ctx.stroke();
-    
-    // 3-point arcs (simplified)
-    ctx.beginPath();
-    ctx.arc(200, 540, 400, -Math.PI/3, Math.PI/3);
-    ctx.stroke();
-    
-    ctx.beginPath();
-    ctx.arc(1720, 540, 400, Math.PI*2/3, Math.PI*4/3);
-    ctx.stroke();
-    
-    // Basketball hoops
+    // Basketball hoops (always draw these on top)
     const drawHoop = (x: number, backboardX: number) => {
       // Backboard
       ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
@@ -3541,28 +3557,8 @@ export default function Visualizer() {
                   </div>
                   <div className="relative w-full rounded-lg shadow-2xl overflow-hidden" style={{ paddingBottom: "56.25%" }}>
                     <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1920 1080">
-                      {/* Wood court gradient background */}
-                      <defs>
-                        <linearGradient id="courtGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                          <stop offset="0%" stopColor="#c19a6b" />
-                          <stop offset="100%" stopColor="#a67c52" />
-                        </linearGradient>
-                      </defs>
-                      <rect x="0" y="0" width="1920" height="1080" fill="url(#courtGradient)"/>
-                      
-                      {/* EXACT match to game court dimensions */}
-                      {/* Border */}
-                      <rect x="100" y="100" width="1720" height="880" stroke="white" strokeWidth="6" fill="none"/>
-                      
-                      {/* Center line */}
-                      <line x1="960" y1="100" x2="960" y2="980" stroke="white" strokeWidth="6"/>
-                      
-                      {/* Center circle */}
-                      <circle cx="960" cy="540" r="120" stroke="white" strokeWidth="6" fill="none"/>
-                      
-                      {/* 3-point arcs - curve toward center of court */}
-                      <path d="M 200,740 A 400,400 0 0,0 200,340" stroke="white" strokeWidth="6" fill="none"/>
-                      <path d="M 1720,340 A 400,400 0 0,0 1720,740" stroke="white" strokeWidth="6" fill="none"/>
+                      {/* Court background image */}
+                      <image href={courtImage} x="0" y="0" width="1920" height="1080" preserveAspectRatio="none"/>
                       
                       {/* Backboards */}
                       <rect x="95" y="480" width="10" height="120" fill="rgba(255, 255, 255, 0.9)"/>
