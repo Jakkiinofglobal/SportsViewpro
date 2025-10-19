@@ -3756,163 +3756,226 @@ export default function Visualizer() {
               </div>
             </Card>
             <Card className="p-4 space-y-3">
-              <Label className="text-xs uppercase tracking-wide text-muted-foreground">Hit Result</Label>
-              <div className="grid grid-cols-2 gap-2">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">Runners (Max 4)</Label>
+              {/* Runner 1 - At Bat */}
+              <div className="space-y-2 p-2 bg-muted/50 rounded">
+                <div className="text-xs font-bold text-primary">Runner 1 (At Bat)</div>
+                <div className="text-sm font-mono mb-2">
+                  {state.atBatName ? `${state.atBatName} #${state.atBatNumber}` : "Not set"}
+                </div>
+                <div className="grid grid-cols-4 gap-1">
+                  <Button
+                    data-testid="button-r1-1b"
+                    size="sm"
+                    variant="outline"
+                    disabled={!state.atBatName}
+                    onClick={() => {
+                      const runner = { name: state.atBatName, number: state.atBatNumber };
+                      setState(prev => ({
+                        ...prev,
+                        runners: { ...prev.runners, first: runner },
+                        atBatName: "",
+                        atBatNumber: ""
+                      }));
+                      toast({ description: `${runner.name} → 1B` });
+                    }}
+                  >
+                    1B
+                  </Button>
+                  <Button
+                    data-testid="button-r1-2b"
+                    size="sm"
+                    variant="outline"
+                    disabled={!state.atBatName}
+                    onClick={() => {
+                      const runner = { name: state.atBatName, number: state.atBatNumber };
+                      setState(prev => ({
+                        ...prev,
+                        runners: { ...prev.runners, second: runner },
+                        atBatName: "",
+                        atBatNumber: ""
+                      }));
+                      toast({ description: `${runner.name} → 2B` });
+                    }}
+                  >
+                    2B
+                  </Button>
+                  <Button
+                    data-testid="button-r1-3b"
+                    size="sm"
+                    variant="outline"
+                    disabled={!state.atBatName}
+                    onClick={() => {
+                      const runner = { name: state.atBatName, number: state.atBatNumber };
+                      setState(prev => ({
+                        ...prev,
+                        runners: { ...prev.runners, third: runner },
+                        atBatName: "",
+                        atBatNumber: ""
+                      }));
+                      toast({ description: `${runner.name} → 3B` });
+                    }}
+                  >
+                    3B
+                  </Button>
+                  <Button
+                    data-testid="button-r1-home"
+                    size="sm"
+                    variant="outline"
+                    disabled={!state.atBatName}
+                    onClick={() => {
+                      const runner = { name: state.atBatName, number: state.atBatNumber };
+                      const team = state.possession === "home" ? "homeScore" : "awayScore";
+                      goalFlash.current = { active: true, team: state.possession, startTime: performance.now() };
+                      setState(prev => ({
+                        ...prev,
+                        [team]: prev[team] + 1,
+                        atBatName: "",
+                        atBatNumber: ""
+                      }));
+                      toast({ description: `${runner.name} scores! 🎉` });
+                    }}
+                  >
+                    ⌂
+                  </Button>
+                </div>
+              </div>
+
+              {/* Runner on 1st Base */}
+              <div className="space-y-2 p-2 bg-muted/30 rounded">
+                <div className="text-xs font-bold">Runner on 1B</div>
+                <div className="text-sm font-mono mb-2">
+                  {state.runners.first ? `${state.runners.first.name} #${state.runners.first.number}` : "Empty"}
+                </div>
+                <div className="grid grid-cols-3 gap-1">
+                  <Button
+                    data-testid="button-r2-2b"
+                    size="sm"
+                    variant="outline"
+                    disabled={!state.runners.first}
+                    onClick={() => {
+                      const runner = state.runners.first!;
+                      setState(prev => ({
+                        ...prev,
+                        runners: { ...prev.runners, first: null, second: runner }
+                      }));
+                      toast({ description: `${runner.name} → 2B` });
+                    }}
+                  >
+                    2B
+                  </Button>
+                  <Button
+                    data-testid="button-r2-3b"
+                    size="sm"
+                    variant="outline"
+                    disabled={!state.runners.first}
+                    onClick={() => {
+                      const runner = state.runners.first!;
+                      setState(prev => ({
+                        ...prev,
+                        runners: { ...prev.runners, first: null, third: runner }
+                      }));
+                      toast({ description: `${runner.name} → 3B` });
+                    }}
+                  >
+                    3B
+                  </Button>
+                  <Button
+                    data-testid="button-r2-home"
+                    size="sm"
+                    variant="outline"
+                    disabled={!state.runners.first}
+                    onClick={() => {
+                      const runner = state.runners.first!;
+                      const team = state.possession === "home" ? "homeScore" : "awayScore";
+                      goalFlash.current = { active: true, team: state.possession, startTime: performance.now() };
+                      setState(prev => ({
+                        ...prev,
+                        [team]: prev[team] + 1,
+                        runners: { ...prev.runners, first: null }
+                      }));
+                      toast({ description: `${runner.name} scores! 🎉` });
+                    }}
+                  >
+                    ⌂
+                  </Button>
+                </div>
+              </div>
+
+              {/* Runner on 2nd Base */}
+              <div className="space-y-2 p-2 bg-muted/30 rounded">
+                <div className="text-xs font-bold">Runner on 2B</div>
+                <div className="text-sm font-mono mb-2">
+                  {state.runners.second ? `${state.runners.second.name} #${state.runners.second.number}` : "Empty"}
+                </div>
+                <div className="grid grid-cols-2 gap-1">
+                  <Button
+                    data-testid="button-r3-3b"
+                    size="sm"
+                    variant="outline"
+                    disabled={!state.runners.second}
+                    onClick={() => {
+                      const runner = state.runners.second!;
+                      setState(prev => ({
+                        ...prev,
+                        runners: { ...prev.runners, second: null, third: runner }
+                      }));
+                      toast({ description: `${runner.name} → 3B` });
+                    }}
+                  >
+                    3B
+                  </Button>
+                  <Button
+                    data-testid="button-r3-home"
+                    size="sm"
+                    variant="outline"
+                    disabled={!state.runners.second}
+                    onClick={() => {
+                      const runner = state.runners.second!;
+                      const team = state.possession === "home" ? "homeScore" : "awayScore";
+                      goalFlash.current = { active: true, team: state.possession, startTime: performance.now() };
+                      setState(prev => ({
+                        ...prev,
+                        [team]: prev[team] + 1,
+                        runners: { ...prev.runners, second: null }
+                      }));
+                      toast({ description: `${runner.name} scores! 🎉` });
+                    }}
+                  >
+                    ⌂
+                  </Button>
+                </div>
+              </div>
+
+              {/* Runner on 3rd Base */}
+              <div className="space-y-2 p-2 bg-muted/30 rounded">
+                <div className="text-xs font-bold">Runner on 3B</div>
+                <div className="text-sm font-mono mb-2">
+                  {state.runners.third ? `${state.runners.third.name} #${state.runners.third.number}` : "Empty"}
+                </div>
                 <Button
-                  data-testid="button-advance-1b"
+                  data-testid="button-r4-home"
                   size="sm"
                   variant="outline"
-                  onClick={() => setState(prev => {
-                    if (!prev.atBatName) {
-                      toast({ description: "No batter at bat", variant: "destructive" });
-                      return prev;
-                    }
-                    const team = prev.possession === "home" ? "homeScore" : "awayScore";
-                    const newRunners = { ...prev.runners };
-                    let runs = 0;
-                    
-                    // Runner on 3rd scores
-                    if (newRunners.third) runs++;
-                    
-                    // Advance all runners (3rd→home, 2nd→3rd, 1st→2nd)
-                    newRunners.third = newRunners.second;
-                    newRunners.second = newRunners.first;
-                    newRunners.first = { name: prev.atBatName, number: prev.atBatNumber };
-                    
-                    // Trigger goal flash if runs scored
-                    if (runs > 0) {
-                      goalFlash.current = { active: true, team: prev.possession, startTime: performance.now() };
-                    }
-                    
-                    return { 
-                      ...prev, 
-                      [team]: prev[team] + runs,
-                      runners: newRunners, 
-                      atBatName: "", 
-                      atBatNumber: "",
-                      balls: 0,
-                      strikes: 0
-                    };
-                  })}
+                  disabled={!state.runners.third}
+                  onClick={() => {
+                    const runner = state.runners.third!;
+                    const team = state.possession === "home" ? "homeScore" : "awayScore";
+                    goalFlash.current = { active: true, team: state.possession, startTime: performance.now() };
+                    setState(prev => ({
+                      ...prev,
+                      [team]: prev[team] + 1,
+                      runners: { ...prev.runners, third: null }
+                    }));
+                    toast({ description: `${runner.name} scores! 🎉` });
+                  }}
+                  className="w-full"
                 >
-                  1B
-                </Button>
-                <Button
-                  data-testid="button-advance-2b"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setState(prev => {
-                    if (!prev.atBatName) {
-                      toast({ description: "No batter at bat", variant: "destructive" });
-                      return prev;
-                    }
-                    const team = prev.possession === "home" ? "homeScore" : "awayScore";
-                    const newRunners = { ...prev.runners };
-                    let runs = 0;
-                    
-                    // Runners on 3rd and 2nd score
-                    if (newRunners.third) runs++;
-                    if (newRunners.second) runs++;
-                    
-                    // Advance (1st→3rd, batter→2nd)
-                    newRunners.third = newRunners.first;
-                    newRunners.second = { name: prev.atBatName, number: prev.atBatNumber };
-                    newRunners.first = null;
-                    
-                    // Trigger goal flash if runs scored
-                    if (runs > 0) {
-                      goalFlash.current = { active: true, team: prev.possession, startTime: performance.now() };
-                    }
-                    
-                    return { 
-                      ...prev, 
-                      [team]: prev[team] + runs,
-                      runners: newRunners, 
-                      atBatName: "", 
-                      atBatNumber: "",
-                      balls: 0,
-                      strikes: 0
-                    };
-                  })}
-                >
-                  2B
-                </Button>
-                <Button
-                  data-testid="button-advance-3b"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setState(prev => {
-                    if (!prev.atBatName) {
-                      toast({ description: "No batter at bat", variant: "destructive" });
-                      return prev;
-                    }
-                    const team = prev.possession === "home" ? "homeScore" : "awayScore";
-                    const newRunners = { ...prev.runners };
-                    let runs = 0;
-                    
-                    // All runners score
-                    if (newRunners.third) runs++;
-                    if (newRunners.second) runs++;
-                    if (newRunners.first) runs++;
-                    
-                    // Batter goes to 3rd, bases cleared
-                    newRunners.third = { name: prev.atBatName, number: prev.atBatNumber };
-                    newRunners.second = null;
-                    newRunners.first = null;
-                    
-                    // Trigger goal flash if runs scored
-                    if (runs > 0) {
-                      goalFlash.current = { active: true, team: prev.possession, startTime: performance.now() };
-                    }
-                    
-                    return { 
-                      ...prev, 
-                      [team]: prev[team] + runs,
-                      runners: newRunners, 
-                      atBatName: "", 
-                      atBatNumber: "",
-                      balls: 0,
-                      strikes: 0
-                    };
-                  })}
-                >
-                  3B
-                </Button>
-                <Button
-                  data-testid="button-advance-hr"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setState(prev => {
-                    if (!prev.atBatName) {
-                      toast({ description: "No batter at bat", variant: "destructive" });
-                      return prev;
-                    }
-                    const team = prev.possession === "home" ? "homeScore" : "awayScore";
-                    let runs = 1; // Batter scores
-                    
-                    // All runners score
-                    if (prev.runners.third) runs++;
-                    if (prev.runners.second) runs++;
-                    if (prev.runners.first) runs++;
-                    
-                    // Trigger goal flash
-                    goalFlash.current = { active: true, team: prev.possession, startTime: performance.now() };
-                    
-                    return { 
-                      ...prev, 
-                      [team]: prev[team] + runs,
-                      runners: { first: null, second: null, third: null }, 
-                      atBatName: "", 
-                      atBatNumber: "",
-                      balls: 0,
-                      strikes: 0
-                    };
-                  })}
-                >
-                  HR
+                  Score (⌂)
                 </Button>
               </div>
-              <Button data-testid="button-clear-bases" size="sm" variant="outline" onClick={() => setState(prev => ({ ...prev, runners: { first: null, second: null, third: null } }))} className="w-full">Clear Bases</Button>
+
+              <Button data-testid="button-clear-bases" size="sm" variant="outline" onClick={() => setState(prev => ({ ...prev, runners: { first: null, second: null, third: null } }))} className="w-full">Clear All Bases</Button>
             </Card>
             <Card className="p-4 space-y-3">
               <Label className="text-xs uppercase tracking-wide text-muted-foreground">Inning</Label>
