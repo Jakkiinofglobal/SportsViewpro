@@ -234,6 +234,7 @@ export default function Visualizer() {
   const [gamepadConnected, setGamepadConnected] = useState(false);
   const gamepadRef = useRef<Gamepad | null>(null);
   const lastGamepadButtons = useRef<boolean[]>([]);
+  const [canvasFocused, setCanvasFocused] = useState(true);
 
   const showUpgrade = (featureName: string) => {
     setUpgradeFeatureName(featureName);
@@ -1452,8 +1453,25 @@ export default function Visualizer() {
     return { points: 2, zone: "2PT" };
   };
 
+  // Window focus/blur detection
+  useEffect(() => {
+    const handleWindowFocus = () => setCanvasFocused(true);
+    const handleWindowBlur = () => setCanvasFocused(false);
+    
+    window.addEventListener('focus', handleWindowFocus);
+    window.addEventListener('blur', handleWindowBlur);
+    
+    return () => {
+      window.removeEventListener('focus', handleWindowFocus);
+      window.removeEventListener('blur', handleWindowBlur);
+    };
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Ensure canvas is marked as focused when keyboard is used
+      setCanvasFocused(true);
+      
       // BASEBALL: Arrow keys move runner between bases
       if (stateRef.current.sport === "baseball" && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
         e.preventDefault();
@@ -1890,6 +1908,9 @@ export default function Visualizer() {
     if (!canvas) return;
     
     const handleMouseDown = (e: MouseEvent) => {
+      // Mark canvas as focused when clicked
+      setCanvasFocused(true);
+      
       const rect = canvas.getBoundingClientRect();
       const scaleX = 1920 / rect.width;
       const scaleY = 1080 / rect.height;
@@ -4386,14 +4407,26 @@ export default function Visualizer() {
 
         {/* Canvas Stage */}
         <div className="flex-1 flex items-center justify-center p-4 bg-background">
-          <div className="w-full max-w-[1600px] aspect-video">
+          <div className="w-full max-w-[1600px] aspect-video relative">
             <canvas
               ref={canvasRef}
               width={1920}
               height={1080}
               className="w-full h-full border border-card-border rounded-lg shadow-lg"
               style={{ cursor: isDraggingBall.current || isDraggingLogo.current ? "grabbing" : "default" }}
+              onClick={() => setCanvasFocused(true)}
             />
+            {!canvasFocused && (
+              <div 
+                className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-lg cursor-pointer"
+                onClick={() => setCanvasFocused(true)}
+              >
+                <div className="bg-card border-2 border-primary rounded-lg p-6 text-center shadow-xl">
+                  <p className="text-lg font-semibold mb-2">🖱️ Click to activate controls</p>
+                  <p className="text-sm text-muted-foreground">Keyboard and mouse controls are ready</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
