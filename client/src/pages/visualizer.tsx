@@ -1706,11 +1706,15 @@ export default function Visualizer() {
           
           // Auto-calculate yards based on ball movement (120 yards = ~1920px width)
           let yards = 0;
+          console.log("🏈 Football logging - pendingShotLocation:", pendingShotLocation, "ballX:", ballX, "ballY:", ballY);
           if (pendingShotLocation) {
             const pixelsMoved = ballX - pendingShotLocation.x;
             // Convert pixels to yards (1920px ≈ 120 yards, so ~16px per yard)
             // Positive movement to the right = positive yards
             yards = Math.round(pixelsMoved / 16);
+            console.log(`🏈 Pixels moved: ${pixelsMoved}, Yards calculated: ${yards}`);
+          } else {
+            console.log("🏈 No pendingShotLocation - yards will be 0");
           }
           
           const play: FootballPlay = {
