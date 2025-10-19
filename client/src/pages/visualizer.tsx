@@ -831,9 +831,9 @@ export default function Visualizer() {
     // Base positions - CLOSER to home plate, matching white squares on field
     // Home(960,900) → bases much closer
     const bases = [
-      { x: 1180, y: 680, runner: runners.first, label: "1B" },  // Right side - closer
-      { x: 960, y: 520, runner: runners.second, label: "2B" },  // Top - closer
-      { x: 740, y: 680, runner: runners.third, label: "3B" },   // Left side - closer
+      { x: 1200, y: 695, runner: runners.first, label: "1B" },  // Right side - on base
+      { x: 960, y: 520, runner: runners.second, label: "2B" },  // Top - on base
+      { x: 720, y: 695, runner: runners.third, label: "3B" },   // Left side - on base
     ];
     
     // Draw runners on bases
@@ -3898,7 +3898,26 @@ export default function Visualizer() {
                 <div className="text-sm font-mono mb-2">
                   {state.runners.second ? `${state.runners.second.name} #${state.runners.second.number}` : "Empty"}
                 </div>
-                <div className="grid grid-cols-2 gap-1">
+                <div className="grid grid-cols-3 gap-1">
+                  <Button
+                    data-testid="button-r3-1b"
+                    size="sm"
+                    variant="secondary"
+                    disabled={!state.runners.second}
+                    onClick={() => {
+                      setState(prev => {
+                        if (!prev.runners.second) return prev;
+                        const runner = prev.runners.second;
+                        toast({ description: `${runner.name} ← 1B` });
+                        return {
+                          ...prev,
+                          runners: { ...prev.runners, second: null, first: runner }
+                        };
+                      });
+                    }}
+                  >
+                    ← 1B
+                  </Button>
                   <Button
                     data-testid="button-r3-3b"
                     size="sm"
@@ -3969,29 +3988,68 @@ export default function Visualizer() {
                 <div className="text-sm font-mono mb-2">
                   {state.runners.third ? `${state.runners.third.name} #${state.runners.third.number}` : "Empty"}
                 </div>
-                <Button
-                  data-testid="button-r4-home"
-                  size="sm"
-                  variant="outline"
-                  disabled={!state.runners.third}
-                  onClick={() => {
-                    setState(prev => {
-                      if (!prev.runners.third) return prev;
-                      const runner = prev.runners.third;
-                      const team = prev.possession === "home" ? "homeScore" : "awayScore";
-                      goalFlash.current = { active: true, team: prev.possession, startTime: performance.now() };
-                      toast({ description: `${runner.name} scores! 🎉` });
-                      return {
-                        ...prev,
-                        [team]: prev[team] + 1,
-                        runners: { ...prev.runners, third: null }
-                      };
-                    });
-                  }}
-                  className="w-full"
-                >
-                  Score (⌂)
-                </Button>
+                <div className="grid grid-cols-3 gap-1">
+                  <Button
+                    data-testid="button-r4-1b"
+                    size="sm"
+                    variant="secondary"
+                    disabled={!state.runners.third}
+                    onClick={() => {
+                      setState(prev => {
+                        if (!prev.runners.third) return prev;
+                        const runner = prev.runners.third;
+                        toast({ description: `${runner.name} ← 1B` });
+                        return {
+                          ...prev,
+                          runners: { ...prev.runners, third: null, first: runner }
+                        };
+                      });
+                    }}
+                  >
+                    ← 1B
+                  </Button>
+                  <Button
+                    data-testid="button-r4-2b"
+                    size="sm"
+                    variant="secondary"
+                    disabled={!state.runners.third}
+                    onClick={() => {
+                      setState(prev => {
+                        if (!prev.runners.third) return prev;
+                        const runner = prev.runners.third;
+                        toast({ description: `${runner.name} ← 2B` });
+                        return {
+                          ...prev,
+                          runners: { ...prev.runners, third: null, second: runner }
+                        };
+                      });
+                    }}
+                  >
+                    ← 2B
+                  </Button>
+                  <Button
+                    data-testid="button-r4-home"
+                    size="sm"
+                    variant="outline"
+                    disabled={!state.runners.third}
+                    onClick={() => {
+                      setState(prev => {
+                        if (!prev.runners.third) return prev;
+                        const runner = prev.runners.third;
+                        const team = prev.possession === "home" ? "homeScore" : "awayScore";
+                        goalFlash.current = { active: true, team: prev.possession, startTime: performance.now() };
+                        toast({ description: `${runner.name} scores! 🎉` });
+                        return {
+                          ...prev,
+                          [team]: prev[team] + 1,
+                          runners: { ...prev.runners, third: null }
+                        };
+                      });
+                    }}
+                  >
+                    ⌂
+                  </Button>
+                </div>
                 <Button
                   data-testid="button-r4-out"
                   size="sm"
