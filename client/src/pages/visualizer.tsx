@@ -1092,49 +1092,6 @@ export default function Visualizer() {
         }
       }
       
-      // FOOTBALL: Log rush (Z) or pass (X) with yards (independent of waitingForShotResult)
-      if (stateRef.current.sport === "football" && (e.key.toLowerCase() === "z" || e.key.toLowerCase() === "x")) {
-        e.preventDefault();
-        const isRush = e.key.toLowerCase() === "z";
-        const yards = currentPlayYardsRef.current; // Read from ref to avoid stale closure
-        const currentState = stateRef.current;
-        const currentTeam = currentState.possession;
-        
-        const play: FootballPlay = {
-          id: Date.now().toString(),
-          type: isRush ? "rush" : "pass",
-          yards,
-          playerName: currentState.carrierName || "Unknown",
-          playerJersey: currentState.carrierNumber || "00",
-          team: currentTeam,
-          timestamp: Date.now(),
-        };
-        
-        console.log(`🏈 Logging football ${isRush ? "rush" : "pass"}:`, play);
-        
-        // Save to state
-        setState(prev => ({
-          ...prev,
-          footballPlays: [...prev.footballPlays, play]
-        }));
-        
-        // Add to play history
-        setPlayHistory(prev => [{
-          id: play.id,
-          timestamp: play.timestamp,
-          type: "play" as const,
-          description: `${currentState.carrierName} ${isRush ? "rushed" : "passed"} for ${yards > 0 ? '+' : ''}${yards} yards`
-        }, ...prev].slice(0, 100));
-        
-        // Reset yards
-        setCurrentPlayYards(0);
-        
-        toast({ 
-          description: `${isRush ? "Rush" : "Pass"}: ${currentState.carrierName} ${yards > 0 ? '+' : ''}${yards} yards` 
-        });
-        return;
-      }
-      
       // Check for player hotkeys
       const playerHotkey = stateRef.current.playerHotkeys.find(h => h.hotkey.toLowerCase() === e.key.toLowerCase());
       if (playerHotkey) {
@@ -1206,6 +1163,47 @@ export default function Visualizer() {
             description: made 
               ? `${zone.zone} made! +${zone.points} pts for ${currentState.carrierName}` 
               : `${zone.zone} missed by ${currentState.carrierName}` 
+          });
+          return;
+        }
+        
+        // FOOTBALL: Log rush (Z) or pass (X) with yards
+        if (currentState.sport === "football") {
+          const isRush = e.key.toLowerCase() === "z";
+          const yards = currentPlayYardsRef.current; // Read from ref to avoid stale closure
+          
+          const play: FootballPlay = {
+            id: Date.now().toString(),
+            type: isRush ? "rush" : "pass",
+            yards,
+            playerName: currentState.carrierName || "Unknown",
+            playerJersey: currentState.carrierNumber || "00",
+            team: currentTeam,
+            timestamp: Date.now(),
+          };
+          
+          console.log(`🏈 Logging football ${isRush ? "rush" : "pass"}:`, play);
+          
+          // Save to state
+          setState(prev => ({
+            ...prev,
+            footballPlays: [...prev.footballPlays, play]
+          }));
+          
+          // Add to play history
+          setPlayHistory(prev => [{
+            id: play.id,
+            timestamp: play.timestamp,
+            type: "play" as const,
+            description: `${currentState.carrierName} ${isRush ? "rushed" : "passed"} for ${yards > 0 ? '+' : ''}${yards} yards`
+          }, ...prev].slice(0, 100));
+          
+          // Reset yards and waiting state
+          setCurrentPlayYards(0);
+          setWaitingForShotResult(false);
+          
+          toast({ 
+            description: `${isRush ? "Rush" : "Pass"}: ${currentState.carrierName} ${yards > 0 ? '+' : ''}${yards} yards` 
           });
           return;
         }
