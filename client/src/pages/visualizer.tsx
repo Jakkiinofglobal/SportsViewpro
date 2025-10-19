@@ -631,15 +631,15 @@ export default function Visualizer() {
       ctx.strokeStyle = "#ffcc00";
       ctx.lineWidth = 6;
       
-      // Uprights - much shorter, fits between white lines
+      // Uprights - even shorter (1.5 inches off each end)
       ctx.beginPath();
       ctx.moveTo(x, 350);
-      ctx.lineTo(x, 250);
+      ctx.lineTo(x, 274);
       ctx.stroke();
       
       ctx.beginPath();
       ctx.moveTo(x, 730);
-      ctx.lineTo(x, 830);
+      ctx.lineTo(x, 806);
       ctx.stroke();
       
       // Crossbar - short to match uprights
@@ -653,33 +653,22 @@ export default function Visualizer() {
     drawFieldGoal(100);  // Left endzone
     drawFieldGoal(1820); // Right endzone
     
-    // Draw team names in endzones
+    // Draw team labels
     ctx.save();
-    ctx.font = "bold 72px Arial";
+    ctx.font = "bold 48px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     
-    // Left endzone - HOME (rotated vertically)
-    ctx.save();
-    ctx.translate(150, 540);
-    ctx.rotate(-Math.PI / 2);
-    ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-    ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
-    ctx.lineWidth = 3;
-    ctx.strokeText("TOUCHDOWN", 0, 0);
-    ctx.fillText("TOUCHDOWN", 0, 0);
-    ctx.restore();
+    // Left endzone - HOME
+    ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.4)";
+    ctx.lineWidth = 2;
+    ctx.strokeText("HOME", 150, 540);
+    ctx.fillText("HOME", 150, 540);
     
-    // Right endzone - AWAY (rotated vertically)
-    ctx.save();
-    ctx.translate(1770, 540);
-    ctx.rotate(Math.PI / 2);
-    ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-    ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
-    ctx.lineWidth = 3;
-    ctx.strokeText("TOUCHDOWN", 0, 0);
-    ctx.fillText("TOUCHDOWN", 0, 0);
-    ctx.restore();
+    // Right endzone - AWAY
+    ctx.strokeText("AWAY", 1770, 540);
+    ctx.fillText("AWAY", 1770, 540);
     
     ctx.restore();
   };
