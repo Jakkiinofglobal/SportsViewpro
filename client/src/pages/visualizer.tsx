@@ -666,7 +666,7 @@ export default function Visualizer() {
     
     // Left endzone - HOME (reads bottom to top)
     ctx.save();
-    ctx.translate(150, 540);
+    ctx.translate(200, 540);
     ctx.rotate(-Math.PI / 2);
     ctx.strokeText("HOME", 0, 0);
     ctx.fillText("HOME", 0, 0);
@@ -674,7 +674,7 @@ export default function Visualizer() {
     
     // Right endzone - AWAY (reads top to bottom)
     ctx.save();
-    ctx.translate(1770, 540);
+    ctx.translate(1720, 540);
     ctx.rotate(Math.PI / 2);
     ctx.strokeText("AWAY", 0, 0);
     ctx.fillText("AWAY", 0, 0);
