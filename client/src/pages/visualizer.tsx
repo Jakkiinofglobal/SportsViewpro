@@ -816,11 +816,12 @@ export default function Visualizer() {
   const drawRunners = (ctx: CanvasRenderingContext2D) => {
     const { runners, atBatName, atBatNumber } = state;
     
-    // Base positions (going right to left from home: 3B → 2B → 1B)
+    // Base positions - correct mapping to match diamond geometry
+    // Diamond points: Home(960,900) → 1B(1420,440) → 2B(960,180) → 3B(500,440) → Home
     const bases = [
-      { x: 1420, y: 440, runner: runners.third, label: "3B" },
-      { x: 960, y: 180, runner: runners.second, label: "2B" },
-      { x: 500, y: 440, runner: runners.first, label: "1B" },
+      { x: 1420, y: 440, runner: runners.first, label: "1B" },  // Right side
+      { x: 960, y: 180, runner: runners.second, label: "2B" },  // Top
+      { x: 500, y: 440, runner: runners.third, label: "3B" },   // Left side
     ];
     
     // Draw runners on bases
@@ -1448,6 +1449,56 @@ export default function Visualizer() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // BASEBALL: Arrow keys move runner between bases
+      if (stateRef.current.sport === "baseball" && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
+        e.preventDefault();
+        const currentState = stateRef.current;
+        
+        if (!currentState.atBatName) {
+          toast({ description: "Select a player first using their hotkey", variant: "destructive" });
+          return;
+        }
+        
+        const runner = {
+          name: currentState.atBatName,
+          number: currentState.atBatNumber
+        };
+        
+        if (e.key === "ArrowRight") {
+          // Move to 1st base
+          setState(prev => ({
+            ...prev,
+            runners: { ...prev.runners, first: runner }
+          }));
+          toast({ description: `${runner.name} → 1st Base` });
+        } else if (e.key === "ArrowUp") {
+          // Move to 2nd base
+          setState(prev => ({
+            ...prev,
+            runners: { ...prev.runners, second: runner }
+          }));
+          toast({ description: `${runner.name} → 2nd Base` });
+        } else if (e.key === "ArrowLeft") {
+          // Move to 3rd base
+          setState(prev => ({
+            ...prev,
+            runners: { ...prev.runners, third: runner }
+          }));
+          toast({ description: `${runner.name} → 3rd Base` });
+        } else if (e.key === "ArrowDown") {
+          // Score run (move to home)
+          setState(prev => ({
+            ...prev,
+            homeScore: prev.possession === "home" ? prev.homeScore + 1 : prev.homeScore,
+            awayScore: prev.possession === "away" ? prev.awayScore + 1 : prev.awayScore,
+          }));
+          goalFlash.current = { active: true, startTime: performance.now(), team: currentState.possession };
+          toast({ description: `${runner.name} scores! 🎉` });
+        }
+        return;
+      }
+      
+      // NON-BASEBALL: Arrow keys move ball
       if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
         e.preventDefault();
         keysPressed.current.add(e.key);
