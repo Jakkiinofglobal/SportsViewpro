@@ -71,23 +71,27 @@ SportSight is a full-stack application leveraging a modern web architecture.
 - **Movement Controls**:
   - Left analog stick: Smooth 360° ball movement with 0.15 deadzone
   - D-Pad: Precise directional ball movement
-  - RT/R2 trigger: Sprint modifier (2x ball speed)
-- **Sport-Specific Actions**:
-  - **Basketball**: Y/RT = Made shot (auto-scores), X = Missed shot, A = Free Throw mode
-  - **Football**: Y/RT = Rush play, X = Pass play (uses current yardage counter)
+  - RT/R2 trigger (HOLD): Sprint modifier (2x ball speed)
+- **Two-Step Shot/Play Workflow**:
+  - **Basketball**: RT (press) = Shoot/log location → Y = Make (auto-scores 2pt/3pt/FT), X = Miss
+  - **Football**: RT (press) = Log play → Y = Rush, X = Pass (uses current yardage counter)
+  - Auto-scoring based on distance from hoop (2pt/3pt) or free throw mode
   - Keyboard +/- still required for football yardage adjustment
+- **Sport-Specific Actions**:
+  - **Basketball**: A = Free Throw mode, LT = Reset shot clock (24s)
+  - **Football**: LT = Reset play clock (40s)
 - **Game Management**:
-  - LT/L2 = +1 point to possession team
+  - LB = Toggle game clock
+  - RB = Toggle possession
   - B = Cycle through ball carriers
-  - LB/RB = Adjust scores ±1
-  - Start = Toggle game clock
-  - Select/Back = Switch possession
+  - Select/Back = Cancel shot/play logging (if waiting for Y/X input)
 - **UI Enhancements**:
   - Green pulsing indicator in bottom hints bar when controller connected
   - Dynamic instruction card appears in left panel showing sport-specific button mappings
   - Card highlights with green theme when controller is active
+  - Bottom hints bar shows controller-specific shortcuts when gamepad connected
 - **Compatibility**: Works alongside keyboard and mouse controls seamlessly
-- **Technical Implementation**: 60fps polling loop using `requestAnimationFrame`, edge detection for button presses vs holds
+- **Technical Implementation**: 60fps polling loop using `requestAnimationFrame`, edge detection for button presses vs holds, RT hold detection for sprint vs shoot
 
 ### Team Loading & Hotkey Management Improvements
 - **Flexible CSV Format**: New comma-separated format for loading entire rosters at once
