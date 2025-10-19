@@ -271,6 +271,7 @@ export default function Visualizer() {
   const [pendingShotLocation, setPendingShotLocation] = useState<{ x: number; y: number } | null>(null);
   const [pendingPassStart, setPendingPassStart] = useState<{ x: number; y: number } | null>(null);
   const [waitingForShotResult, setWaitingForShotResult] = useState(false);
+  const [currentPlayYards, setCurrentPlayYards] = useState(0);
   const [selectedTeamFilter, setSelectedTeamFilter] = useState<"home" | "away">("home");
   const [selectedPlayerFilter, setSelectedPlayerFilter] = useState<string>("all");
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -1057,6 +1058,22 @@ export default function Visualizer() {
         keysPressed.current.add("Shift");
       }
       
+      // FOOTBALL YARDAGE: +/- keys adjust yards
+      if (stateRef.current.sport === "football") {
+        if (e.key === "+" || e.key === "=") {
+          e.preventDefault();
+          setCurrentPlayYards(prev => prev + 5);
+          toast({ description: `Yards: ${currentPlayYards + 5}` });
+          return;
+        }
+        if (e.key === "-" || e.key === "_") {
+          e.preventDefault();
+          setCurrentPlayYards(prev => prev - 1);
+          toast({ description: `Yards: ${currentPlayYards - 1}` });
+          return;
+        }
+      }
+      
       // Check for player hotkeys
       const playerHotkey = stateRef.current.playerHotkeys.find(h => h.hotkey.toLowerCase() === e.key.toLowerCase());
       if (playerHotkey) {
@@ -1132,10 +1149,38 @@ export default function Visualizer() {
           return;
         }
         
-        // FOOTBALL: TODO
+        // FOOTBALL: Log rush (Z) or pass (X) with yards
         if (currentState.sport === "football") {
+          const isRush = e.key.toLowerCase() === "z";
+          const yards = currentPlayYards;
+          
+          const play = {
+            id: Date.now().toString(),
+            type: isRush ? "rush" : "pass",
+            yards,
+            playerName: currentState.carrierName || "Unknown",
+            playerJersey: currentState.carrierNumber || "00",
+            team: currentTeam,
+            timestamp: Date.now(),
+          };
+          
+          console.log(`🏈 Logging football ${isRush ? "rush" : "pass"}:`, play);
+          
+          // Add to play history
+          setPlayHistory(prev => [{
+            id: play.id,
+            timestamp: play.timestamp,
+            type: "play" as const,
+            description: `${currentState.carrierName} ${isRush ? "rushed" : "passed"} for ${yards > 0 ? '+' : ''}${yards} yards`
+          }, ...prev].slice(0, 100));
+          
+          // Reset yards and waiting state
+          setCurrentPlayYards(0);
           setWaitingForShotResult(false);
-          toast({ description: "Football tracking coming soon!" });
+          
+          toast({ 
+            description: `${isRush ? "Rush" : "Pass"}: ${currentState.carrierName} ${yards > 0 ? '+' : ''}${yards} yards` 
+          });
           return;
         }
         
