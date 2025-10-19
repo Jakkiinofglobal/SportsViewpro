@@ -833,7 +833,7 @@ export default function Visualizer() {
     const bases = [
       { x: 1200, y: 695, runner: runners.first, label: "1B" },  // Right side - on base
       { x: 960, y: 520, runner: runners.second, label: "2B" },  // Top - on base
-      { x: 720, y: 695, runner: runners.third, label: "3B" },   // Left side - on base
+      { x: 640, y: 695, runner: runners.third, label: "3B" },   // Left side - further left
     ];
     
     // Draw runners on bases
