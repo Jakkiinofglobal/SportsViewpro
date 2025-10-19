@@ -65,6 +65,30 @@ SportSight is a full-stack application leveraging a modern web architecture.
 
 ## Recent Updates (Oct 19, 2025)
 
+### Gamepad/Controller Support
+- **Full Controller Integration**: Native support for Xbox, PlayStation, and compatible USB/Bluetooth gamepads using Gamepad API
+- **Auto-Detection**: Controllers automatically detected on connection with toast notifications and visual indicator
+- **Movement Controls**:
+  - Left analog stick: Smooth 360° ball movement with 0.15 deadzone
+  - D-Pad: Precise directional ball movement
+  - RT/R2 trigger: Sprint modifier (2x ball speed)
+- **Sport-Specific Actions**:
+  - **Basketball**: Y/RT = Made shot (auto-scores), X = Missed shot, A = Free Throw mode
+  - **Football**: Y/RT = Rush play, X = Pass play (uses current yardage counter)
+  - Keyboard +/- still required for football yardage adjustment
+- **Game Management**:
+  - LT/L2 = +1 point to possession team
+  - B = Cycle through ball carriers
+  - LB/RB = Adjust scores ±1
+  - Start = Toggle game clock
+  - Select/Back = Switch possession
+- **UI Enhancements**:
+  - Green pulsing indicator in bottom hints bar when controller connected
+  - Dynamic instruction card appears in left panel showing sport-specific button mappings
+  - Card highlights with green theme when controller is active
+- **Compatibility**: Works alongside keyboard and mouse controls seamlessly
+- **Technical Implementation**: 60fps polling loop using `requestAnimationFrame`, edge detection for button presses vs holds
+
 ### Team Loading & Hotkey Management Improvements
 - **Flexible CSV Format**: New comma-separated format for loading entire rosters at once
   - Format: `Name,#number,hotkey` (e.g., `Jaylin Williams,#6,k`)
