@@ -327,6 +327,8 @@ export default function Visualizer() {
   const isFreeThrowModeRef = useRef(false);
   const [currentPlayYards, setCurrentPlayYards] = useState(0);
   const currentPlayYardsRef = useRef(0);
+  const playStartBallX = useRef<number>(960); // Track starting ball X position for yardage calculation
+  const lastBallX = useRef<number>(960); // Track last ball X to detect actual movement
   const [selectedTeamFilter, setSelectedTeamFilter] = useState<"home" | "away">("home");
   const [selectedPlayerFilter, setSelectedPlayerFilter] = useState<string>("all");
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -438,6 +440,10 @@ export default function Visualizer() {
         ballPhysics.current.velY = data.ballVelY;
         ballPhysics.current.angle = data.ballAngle;
         
+        // Initialize yardage tracking refs
+        playStartBallX.current = data.ballX;
+        lastBallX.current = data.ballX;
+        
         // Restore logo image if data URL exists
         if (data.logoDataURL) {
           const img = new Image();
@@ -453,6 +459,10 @@ export default function Visualizer() {
       // Initialize ball physics from initial state
       ballPhysics.current.x = state.ballX;
       ballPhysics.current.y = state.ballY;
+      
+      // Initialize yardage tracking refs
+      playStartBallX.current = state.ballX;
+      lastBallX.current = state.ballX;
     }
   }, []);
 
@@ -501,15 +511,31 @@ export default function Visualizer() {
   // Sync ball physics to state periodically for persistence
   useEffect(() => {
     const interval = setInterval(() => {
-      setState(prev => ({
-        ...prev,
-        ballX: ballPhysics.current.x,
-        ballY: ballPhysics.current.y,
-        ballVelX: ballPhysics.current.velX,
-        ballVelY: ballPhysics.current.velY,
-        ballAngle: ballPhysics.current.angle
-      }));
-    }, 1000); // Sync every second
+      setState(prev => {
+        const updates: Partial<GameState> = {
+          ballX: ballPhysics.current.x,
+          ballY: ballPhysics.current.y,
+          ballVelX: ballPhysics.current.velX,
+          ballVelY: ballPhysics.current.velY,
+          ballAngle: ballPhysics.current.angle
+        };
+        
+        return { ...prev, ...updates };
+      });
+      
+      // Football: Auto-calculate yardage from ball movement (1920px = 120 yards, ~16px/yard)
+      // Only update if ball has actually moved (to preserve manual adjustments)
+      if (stateRef.current.sport === "football") {
+        const currentBallX = ballPhysics.current.x;
+        const ballMoved = Math.abs(currentBallX - lastBallX.current) > 1; // Threshold of 1px to avoid floating point issues
+        
+        if (ballMoved) {
+          const yardsGained = Math.round((currentBallX - playStartBallX.current) / 16);
+          setCurrentPlayYards(yardsGained);
+          lastBallX.current = currentBallX;
+        }
+      }
+    }, 100); // Sync every 100ms for responsive yardage updates
     
     return () => clearInterval(interval);
   }, []);
@@ -1255,7 +1281,7 @@ export default function Visualizer() {
           const play: FootballPlay = {
             id: Date.now().toString(),
             type: "rush",
-            yards,
+            yards: currentPlayYardsRef.current,
             playerName: currentState.carrierName || "Unknown",
             playerJersey: currentState.carrierNumber || "00",
             team: currentTeam,
@@ -1271,13 +1297,16 @@ export default function Visualizer() {
             id: play.id,
             timestamp: play.timestamp,
             type: "play" as const,
-            description: `${currentState.carrierName} rushed for ${yards > 0 ? '+' : ''}${yards} yards`
+            description: `${currentState.carrierName} rushed for ${currentPlayYardsRef.current > 0 ? '+' : ''}${currentPlayYardsRef.current} yards`
           }, ...prev].slice(0, 100));
           
+          // Reset for next play
+          playStartBallX.current = ballX;
+          lastBallX.current = ballX;
           setCurrentPlayYards(0);
           setPendingShotLocation(null);
           setWaitingForShotResult(false);
-          toast({ description: `Rush: ${currentState.carrierName} ${yards > 0 ? '+' : ''}${yards} yards` });
+          toast({ description: `Rush: ${currentState.carrierName} ${currentPlayYardsRef.current > 0 ? '+' : ''}${currentPlayYardsRef.current} yards` });
         } else if (currentState.sport === "baseball") {
           const hit: BaseballHit = {
             id: Date.now().toString(),
@@ -1350,7 +1379,7 @@ export default function Visualizer() {
           const play: FootballPlay = {
             id: Date.now().toString(),
             type: "pass",
-            yards,
+            yards: currentPlayYardsRef.current,
             playerName: currentState.carrierName || "Unknown",
             playerJersey: currentState.carrierNumber || "00",
             team: currentTeam,
@@ -1366,13 +1395,16 @@ export default function Visualizer() {
             id: play.id,
             timestamp: play.timestamp,
             type: "play" as const,
-            description: `${currentState.carrierName} passed for ${yards > 0 ? '+' : ''}${yards} yards`
+            description: `${currentState.carrierName} passed for ${currentPlayYardsRef.current > 0 ? '+' : ''}${currentPlayYardsRef.current} yards`
           }, ...prev].slice(0, 100));
           
+          // Reset for next play
+          playStartBallX.current = ballX;
+          lastBallX.current = ballX;
           setCurrentPlayYards(0);
           setPendingShotLocation(null);
           setWaitingForShotResult(false);
-          toast({ description: `Pass: ${currentState.carrierName} ${yards > 0 ? '+' : ''}${yards} yards` });
+          toast({ description: `Pass: ${currentState.carrierName} ${currentPlayYardsRef.current > 0 ? '+' : ''}${currentPlayYardsRef.current} yards` });
         } else if (currentState.sport === "baseball") {
           const hit: BaseballHit = {
             id: Date.now().toString(),
