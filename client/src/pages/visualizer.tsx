@@ -1438,25 +1438,46 @@ export default function Visualizer() {
     const usedHotkeys = new Set<string>();
 
     for (const line of lines) {
-      // Format: "Name #number, hotkey" e.g., "Amen Thompson #1, q"
-      const commaIndex = line.lastIndexOf(",");
-      if (commaIndex === -1) {
-        errors.push(`Missing hotkey: "${line}" (expected format: Name #number, hotkey)`);
-        continue;
+      // Format: "Name,#number,hotkey" or "Name,#number" or "Name" (comma-separated)
+      const parts = line.split(",").map(p => p.trim());
+      
+      let name = "";
+      let jersey = "";
+      let hotkey = "";
+      
+      if (parts.length >= 2) {
+        // Format: Name,#number,hotkey OR Name,#number
+        name = parts[0];
+        const numberPart = parts[1];
+        
+        // Extract number (remove # if present)
+        jersey = numberPart.startsWith("#") ? numberPart.substring(1) : numberPart;
+        
+        // Hotkey is optional (third part)
+        if (parts.length >= 3) {
+          hotkey = parts[2];
+        }
+      } else if (parts.length === 1) {
+        // Try old format: "Name #number, hotkey" (space before #, comma before hotkey)
+        const commaIndex = line.lastIndexOf(",");
+        if (commaIndex !== -1) {
+          const playerPart = line.substring(0, commaIndex).trim();
+          hotkey = line.substring(commaIndex + 1).trim();
+          
+          const hashIndex = playerPart.lastIndexOf("#");
+          if (hashIndex !== -1) {
+            name = playerPart.substring(0, hashIndex).trim();
+            jersey = playerPart.substring(hashIndex + 1).trim();
+          } else {
+            errors.push(`Missing #number: "${line}" (expected format: Name,#number,hotkey or Name,#number)`);
+            continue;
+          }
+        } else {
+          // Just a name with no number - skip this player
+          errors.push(`Missing jersey number: "${line}" (expected format: Name,#number,hotkey or Name,#number)`);
+          continue;
+        }
       }
-
-      const playerPart = line.substring(0, commaIndex).trim();
-      const hotkey = line.substring(commaIndex + 1).trim();
-
-      // Extract number from player part (look for #number)
-      const hashIndex = playerPart.lastIndexOf("#");
-      if (hashIndex === -1) {
-        errors.push(`Missing #number: "${line}" (expected format: Name #number, hotkey)`);
-        continue;
-      }
-
-      const name = playerPart.substring(0, hashIndex).trim();
-      const jersey = playerPart.substring(hashIndex + 1).trim();
 
       // Validate jersey number
       if (!jersey || jersey.length === 0) {
@@ -1470,31 +1491,35 @@ export default function Visualizer() {
         continue;
       }
 
-      // Validate hotkey
-      if (!hotkey || !/^[0-9a-z]$/.test(hotkey.toLowerCase())) {
-        errors.push(`Invalid hotkey "${hotkey}" (must be 0-9 or a-z)`);
-        continue;
-      }
-      
-      // Block Z, X, +, - (reserved for game actions)
-      if (hotkey.toLowerCase() === "z" || hotkey.toLowerCase() === "x") {
-        errors.push(`Cannot use "${hotkey}" as hotkey (reserved for shot logging: Z=Made, X=Missed)`);
-        continue;
-      }
-      if (hotkey === "+" || hotkey === "-" || hotkey === "=" || hotkey === "_") {
-        errors.push(`Cannot use "${hotkey}" as hotkey (reserved for football yardage: +=Add 5, -=Subtract 1)`);
-        continue;
-      }
-
-      // Check for duplicate hotkeys
-      if (usedHotkeys.has(hotkey.toLowerCase())) {
-        errors.push(`Duplicate hotkey "${hotkey}" in: "${line}"`);
-        continue;
-      }
-
-      usedHotkeys.add(hotkey.toLowerCase());
+      // Add to roster regardless of hotkey
       roster.push(jersey);
-      hotkeys.push({ jersey, name, hotkey: hotkey.toLowerCase() });
+
+      // Validate hotkey (if provided)
+      if (hotkey && hotkey.length > 0) {
+        if (!/^[0-9a-z]$/.test(hotkey.toLowerCase())) {
+          errors.push(`Invalid hotkey "${hotkey}" (must be 0-9 or a-z) in: "${line}"`);
+          continue;
+        }
+        
+        // Block Z, X, +, - (reserved for game actions)
+        if (hotkey.toLowerCase() === "z" || hotkey.toLowerCase() === "x") {
+          errors.push(`Cannot use "${hotkey}" as hotkey (reserved for shot logging: Z=Made, X=Missed)`);
+          continue;
+        }
+        if (hotkey === "+" || hotkey === "-" || hotkey === "=" || hotkey === "_") {
+          errors.push(`Cannot use "${hotkey}" as hotkey (reserved for football yardage: +=Add 5, -=Subtract 1)`);
+          continue;
+        }
+
+        // Check for duplicate hotkeys
+        if (usedHotkeys.has(hotkey.toLowerCase())) {
+          errors.push(`Duplicate hotkey "${hotkey}" in: "${line}"`);
+          continue;
+        }
+
+        usedHotkeys.add(hotkey.toLowerCase());
+        hotkeys.push({ jersey, name, hotkey: hotkey.toLowerCase() });
+      }
     }
 
     // All-or-nothing: if there are ANY errors, don't load anything
@@ -2073,7 +2098,7 @@ export default function Visualizer() {
             />
             <Textarea
               data-testid="input-home-players"
-              placeholder="Format: Name #number, hotkey&#10;Example:&#10;Amen Thompson #1, q&#10;Fred VanVleet #5, w&#10;Jalen Green #4, e"
+              placeholder="Format: Name,#number,hotkey (or Name,#number)&#10;Example:&#10;Amen Thompson,#1,q&#10;Fred VanVleet,#5,w&#10;Jalen Green,#4"
               value={homePlayersInput}
               onChange={(e) => setHomePlayersInput(e.target.value)}
               className="text-xs font-mono min-h-[80px] resize-none"
@@ -2111,7 +2136,7 @@ export default function Visualizer() {
             />
             <Textarea
               data-testid="input-away-players"
-              placeholder="Format: Name #number, hotkey&#10;Example:&#10;Stephen Curry #30, a&#10;Klay Thompson #11, s&#10;Draymond Green #23, d"
+              placeholder="Format: Name,#number,hotkey (or Name,#number)&#10;Example:&#10;Stephen Curry,#30,a&#10;Klay Thompson,#11,s&#10;Draymond Green,#23"
               value={awayPlayersInput}
               onChange={(e) => setAwayPlayersInput(e.target.value)}
               className="text-xs font-mono min-h-[80px] resize-none"
