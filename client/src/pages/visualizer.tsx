@@ -1590,6 +1590,12 @@ export default function Visualizer() {
     localStorage.removeItem("msv:session");
     window.location.reload();
   };
+  
+  const nuclearReset = () => {
+    // Clear ALL localStorage data
+    localStorage.clear();
+    window.location.reload();
+  };
 
   // Logo functions
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -3218,6 +3224,7 @@ export default function Visualizer() {
           <Button data-testid="button-save-session" size="sm" variant="default" onClick={saveSession} className="w-full">Save Session</Button>
           <Button data-testid="button-load-session" size="sm" variant="outline" onClick={loadSession} className="w-full">Load Session</Button>
           <Button data-testid="button-new-session" size="sm" variant="outline" onClick={newSession} className="w-full">New Session</Button>
+          <Button data-testid="button-nuclear-reset" size="sm" variant="destructive" onClick={nuclearReset} className="w-full">⚠️ RESET ALL DATA</Button>
           <div className="border-t pt-2">
             <Label className="text-xs uppercase tracking-wide text-muted-foreground mb-2 block">Export</Label>
             <div className="space-y-2">
