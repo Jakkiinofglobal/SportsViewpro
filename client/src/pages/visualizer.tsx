@@ -1103,8 +1103,11 @@ export default function Visualizer() {
             timestamp: Date.now(),
           };
           
+          console.log("🏀 Logging basketball shot:", shot);
+          
           setState(prev => {
             const newShots = [...prev.basketballShots, shot];
+            console.log("Total shots after logging:", newShots.length);
             let newScore = currentTeam === "home" ? prev.homeScore : prev.awayScore;
             
             // Add points if shot was made
@@ -1318,16 +1321,15 @@ export default function Visualizer() {
         }
       }
       
-      // Right-click = drag ball (always enabled)
+      // Left-click = drag ball (always enabled)
       const dist = Math.sqrt((x - ballPhysics.current.x) ** 2 + (y - ballPhysics.current.y) ** 2);
-      if (e.button === 2 && dist < state.ballSize + 10) {
+      if (e.button === 0 && dist < state.ballSize + 10) {
         isDraggingBall.current = true;
-        e.preventDefault();
         return;
       }
       
-      // Left-click on ball = ready to shoot (if shot charts enabled)
-      if (e.button === 0 && dist < state.ballSize + 10 && planLimits.canUseShotCharts && !waitingForShotResult) {
+      // Right-click on ball = ready to shoot (if shot charts enabled)
+      if (e.button === 2 && dist < state.ballSize + 10 && planLimits.canUseShotCharts && !waitingForShotResult) {
         setWaitingForShotResult(true);
         toast({ description: "Ready to log shot - Press Z for MADE or X for MISSED" });
         e.preventDefault();
@@ -3374,9 +3376,12 @@ export default function Visualizer() {
                     <SelectItem value="all">All Players</SelectItem>
                     {(() => {
                       const roster = selectedTeamFilter === "home" ? state.homeRoster : state.awayRoster;
+                      console.log("Dropdown roster:", roster);
+                      console.log("Player hotkeys:", state.playerHotkeys);
                       return roster.map(jersey => {
                         const hotkey = state.playerHotkeys.find(h => h.jersey === jersey);
-                        const name = hotkey?.name || `Player`;
+                        const name = hotkey?.name || `Player ${jersey}`;
+                        console.log(`Jersey: ${jersey}, Hotkey found:`, hotkey, `Display: ${name} #${jersey}`);
                         return (
                           <SelectItem key={jersey} value={jersey}>
                             {name} #{jersey}
@@ -3391,11 +3396,17 @@ export default function Visualizer() {
             
             {/* Basketball Shot Chart */}
             {state.sport === "basketball" && (() => {
+              console.log("📊 All basketball shots:", state.basketballShots);
+              console.log("📊 Team filter:", selectedTeamFilter, "Player filter:", selectedPlayerFilter);
+              
               const filteredShots = (state.basketballShots || []).filter(shot => {
+                console.log("Checking shot:", shot, "vs team:", selectedTeamFilter, "player:", selectedPlayerFilter);
                 if (shot.team !== selectedTeamFilter) return false;
                 if (selectedPlayerFilter !== "all" && shot.playerJersey !== selectedPlayerFilter) return false;
                 return true;
               });
+              
+              console.log("📊 Filtered shots:", filteredShots);
               const made = filteredShots.filter(s => s.made).length;
               const missed = filteredShots.filter(s => !s.made).length;
               const pct = filteredShots.length > 0 ? Math.round((made / filteredShots.length) * 100) : 0;
