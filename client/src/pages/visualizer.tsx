@@ -60,6 +60,16 @@ interface PassEvent {
   timestamp: number;
 }
 
+interface FootballPlay {
+  id: string;
+  type: "rush" | "pass";
+  yards: number;
+  playerName: string;
+  playerJersey: string;
+  team: "home" | "away";
+  timestamp: number;
+}
+
 interface HitEvent {
   id: string;
   x: number;
@@ -149,6 +159,7 @@ interface GameState {
   // Shot tracking
   basketballShots: ShotEvent[];
   footballPasses: PassEvent[];
+  footballPlays: FootballPlay[];
   baseballHits: HitEvent[];
 }
 
@@ -255,6 +266,7 @@ export default function Visualizer() {
     awayVideoClips: [],
     basketballShots: [],
     footballPasses: [],
+    footballPlays: [],
     baseballHits: [],
   });
 
@@ -1154,7 +1166,7 @@ export default function Visualizer() {
           const isRush = e.key.toLowerCase() === "z";
           const yards = currentPlayYards;
           
-          const play = {
+          const play: FootballPlay = {
             id: Date.now().toString(),
             type: isRush ? "rush" : "pass",
             yards,
@@ -1165,6 +1177,12 @@ export default function Visualizer() {
           };
           
           console.log(`🏈 Logging football ${isRush ? "rush" : "pass"}:`, play);
+          
+          // Save to state
+          setState(prev => ({
+            ...prev,
+            footballPlays: [...prev.footballPlays, play]
+          }));
           
           // Add to play history
           setPlayHistory(prev => [{
