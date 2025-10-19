@@ -2653,6 +2653,23 @@ export default function Visualizer() {
                 </div>
               </div>
             </Card>
+            <Card className="p-4 space-y-3">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">Current Play</Label>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Yards</span>
+                <div className="flex gap-1">
+                  <Button data-testid="button-yards-minus" size="sm" variant="outline" onClick={() => setCurrentPlayYards(prev => prev - 1)}>−1</Button>
+                  <span data-testid="text-current-yards" className={`px-3 py-1 rounded font-mono font-bold ${currentPlayYards > 0 ? 'bg-green-500/20 text-green-400' : currentPlayYards < 0 ? 'bg-red-500/20 text-red-400' : 'bg-muted'}`}>
+                    {currentPlayYards > 0 ? '+' : ''}{currentPlayYards}
+                  </span>
+                  <Button data-testid="button-yards-plus" size="sm" variant="outline" onClick={() => setCurrentPlayYards(prev => prev + 5)}>+5</Button>
+                </div>
+              </div>
+              <div className="text-xs text-muted-foreground text-center">
+                Press + to add 5 yards, − to subtract 1 yard<br/>
+                Then press Z (rush) or X (pass) to log play
+              </div>
+            </Card>
             <Button
               data-testid="button-show-pass-chart"
               size="sm"
