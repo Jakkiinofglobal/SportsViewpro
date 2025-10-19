@@ -65,13 +65,26 @@ SportSight is a full-stack application leveraging a modern web architecture.
 
 ## Recent Updates (Oct 19, 2025)
 
+### Basketball Hoop Refinements & Player Label Scaling
+- **Hoop Positioning**: Orange hoops repositioned to x=240 and x=1680 (moved inward from edges toward center)
+  - Reduced hoop radius from 25px to 20px for more accurate court image alignment
+  - Removed white backboards (rim-only rendering)
+  - Removed net lines for cleaner visual
+  - Applied to both main canvas and Shot Chart modal
+- **Player Label Scale Controls**: New UI controls for customizing player name and image display
+  - **Name Text Size slider**: Range 0.5x - 2.0x (default 1.0x) - scales font size from 8px to 32px
+  - **Player Image Size slider**: Range 0.5x - 2.0x (default 1.0x) - scales image from 20px to 80px
+  - Located in "Player Label" card in left control panel after "Ball Controls"
+  - All label dimensions (height, width, positioning) scale proportionally
+  - Settings persist in localStorage with proper defaults
+  - New GameState properties: `playerLabelScale`, `playerImageScale`
+
 ### Basketball Court Visual Enhancement
 - **Realistic Court Image**: Integrated professional basketball court image for both main canvas and Shot Chart modal
   - Replaced gradient background with actual court texture showing wood floor and white line markings
-  - Image asset: `attached_assets/OIP (3)_1760844620017.webp`
+  - Image asset: `attached_assets/NBA-Court-Color_1760845084027.png`
   - Canvas rendering uses `ctx.drawImage()` with fallback to gradient if image not loaded
   - Shot Chart modal uses SVG `<image>` element for consistent appearance
-  - Hoops and backboards rendered on top of the court image in both locations
 - **Three-Point Line Fix**: Corrected SVG arc sweep direction in Shot Chart so three-point lines curve toward center of court (not behind goals)
 
 ### Football Yardage Tracking System

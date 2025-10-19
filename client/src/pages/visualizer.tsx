@@ -164,6 +164,10 @@ interface GameState {
   footballPasses: PassEvent[];
   footballPlays: FootballPlay[];
   baseballHits: HitEvent[];
+  
+  // Player label scales
+  playerLabelScale: number;
+  playerImageScale: number;
 }
 
 interface PlayEvent {
@@ -271,6 +275,8 @@ export default function Visualizer() {
     footballPasses: [],
     footballPlays: [],
     baseballHits: [],
+    playerLabelScale: 1.0,
+    playerImageScale: 1.0,
   });
 
   const [homePlayersInput, setHomePlayersInput] = useState("");
@@ -377,6 +383,8 @@ export default function Visualizer() {
             away2: "",
             away3: "",
           },
+          playerLabelScale: data.playerLabelScale ?? 1.0,
+          playerImageScale: data.playerImageScale ?? 1.0,
           carrierName: data.carrierName || "",
         });
         
@@ -507,11 +515,11 @@ export default function Visualizer() {
     
     // Basketball hoops (draw on top of image, aligned with court image hoops)
     const drawHoop = (x: number) => {
-      // Rim only, no net
+      // Rim only, no net - smaller size
       ctx.strokeStyle = "#ff6600";
       ctx.lineWidth = 6;
       ctx.beginPath();
-      ctx.arc(x, 540, 25, 0, Math.PI * 2);
+      ctx.arc(x, 540, 20, 0, Math.PI * 2);
       ctx.stroke();
     };
     
@@ -685,11 +693,13 @@ export default function Visualizer() {
       const playerImg = playerImages.get(carrierNumber);
       const hasImage = !!playerImg;
       
-      const labelHeight = hasName ? 50 : 24;
-      const imageSize = 40;
+      // Apply scales
+      const fontSize = 16 * state.playerLabelScale;
+      const imageSize = 40 * state.playerImageScale;
+      const labelHeight = hasName ? 50 * state.playerLabelScale : 24 * state.playerLabelScale;
       const labelWidth = hasImage ? 
-        Math.max(150, (hasName ? state.carrierName.length * 10 : 50) + imageSize + 10) : 
-        (hasName ? Math.max(100, state.carrierName.length * 10) : 50);
+        Math.max(150 * state.playerLabelScale, (hasName ? state.carrierName.length * 10 * state.playerLabelScale : 50 * state.playerLabelScale) + imageSize + 10) : 
+        (hasName ? Math.max(100 * state.playerLabelScale, state.carrierName.length * 10 * state.playerLabelScale) : 50 * state.playerLabelScale);
       
       // Background
       ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
@@ -719,16 +729,16 @@ export default function Visualizer() {
       }
       
       // Text (shifted right if image exists)
-      const textX = hasImage ? ballX + 20 : ballX;
+      const textX = hasImage ? ballX + 20 * state.playerLabelScale : ballX;
       ctx.fillStyle = "#ffffff";
-      ctx.font = "600 16px 'JetBrains Mono'";
+      ctx.font = `600 ${fontSize}px 'JetBrains Mono'`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(`#${carrierNumber}`, textX, ballY + (hasName ? 42 : 42));
+      ctx.fillText(`#${carrierNumber}`, textX, ballY + (hasName ? 42 * state.playerLabelScale : 42 * state.playerLabelScale));
       
       if (hasName) {
-        ctx.font = "500 16px 'JetBrains Mono'";
-        ctx.fillText(state.carrierName, textX, ballY + 62);
+        ctx.font = `500 ${fontSize}px 'JetBrains Mono'`;
+        ctx.fillText(state.carrierName, textX, ballY + 62 * state.playerLabelScale);
       }
     }
   };
@@ -1562,7 +1572,9 @@ export default function Visualizer() {
         homeVideoClips: data.homeVideoClips || [],
         awayVideoClips: data.awayVideoClips || [],
         basketballQuarter: data.basketballQuarter || 1,
-        quarter: data.quarter || 1
+        quarter: data.quarter || 1,
+        playerLabelScale: data.playerLabelScale ?? 1.0,
+        playerImageScale: data.playerImageScale ?? 1.0
       });
       
       // Restore logo image if data URL exists
@@ -2924,6 +2936,37 @@ export default function Visualizer() {
           </div>
         </Card>
 
+        {/* Player Label Controls */}
+        <Card className="p-4 space-y-3">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Player Label</Label>
+          <div>
+            <Label className="text-xs">Name Text Size</Label>
+            <Slider
+              data-testid="slider-player-label-scale"
+              value={[state.playerLabelScale]}
+              onValueChange={([val]) => setState(prev => ({ ...prev, playerLabelScale: val }))}
+              min={0.5}
+              max={2.0}
+              step={0.1}
+              className="mt-2"
+            />
+            <div className="text-xs text-muted-foreground text-center mt-1">{state.playerLabelScale.toFixed(1)}x</div>
+          </div>
+          <div>
+            <Label className="text-xs">Player Image Size</Label>
+            <Slider
+              data-testid="slider-player-image-scale"
+              value={[state.playerImageScale]}
+              onValueChange={([val]) => setState(prev => ({ ...prev, playerImageScale: val }))}
+              min={0.5}
+              max={2.0}
+              step={0.1}
+              className="mt-2"
+            />
+            <div className="text-xs text-muted-foreground text-center mt-1">{state.playerImageScale.toFixed(1)}x</div>
+          </div>
+        </Card>
+
         {/* Camera Controls */}
         <Card className="p-4 space-y-3">
           <Label className="text-xs uppercase tracking-wide text-muted-foreground">Camera & Zoom</Label>
@@ -3474,9 +3517,9 @@ export default function Visualizer() {
                       {/* Court background image */}
                       <image href={basketballCourtImage} x="0" y="0" width="1920" height="1080" preserveAspectRatio="none"/>
                       
-                      {/* Hoops - moved inward toward center, no backboards */}
-                      <circle cx="240" cy="540" r="25" stroke="#ff6600" strokeWidth="8" fill="none"/>
-                      <circle cx="1680" cy="540" r="25" stroke="#ff6600" strokeWidth="8" fill="none"/>
+                      {/* Hoops - moved inward toward center, no backboards, smaller size */}
+                      <circle cx="240" cy="540" r="20" stroke="#ff6600" strokeWidth="8" fill="none"/>
+                      <circle cx="1680" cy="540" r="20" stroke="#ff6600" strokeWidth="8" fill="none"/>
                       
                       {/* Shots */}
                       {filteredShots.map(shot => (
