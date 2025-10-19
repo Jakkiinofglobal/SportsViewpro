@@ -66,11 +66,14 @@ SportSight is a full-stack application leveraging a modern web architecture.
 ## Recent Updates (Oct 19, 2025)
 
 ### Football Yardage Tracking System
-- **New Football Interaction Model**: Real-time yardage tracking with keyboard controls
+- **Unified Two-Step Interaction Model**: Consistent workflow across Basketball and Football
+  - **Step 1**: Adjust yardage with **+/-** keys (optional, independent of logging)
+  - **Step 2**: Right-click ball → Press **Z** for Rush or **X** for Pass
+  - Basketball uses same pattern: Right-click ball → **Z** for made shot, **X** for missed
+- **Football Yardage Controls**:
   - Press **+ (Plus)** to add 5 yards to current play
   - Press **- (Minus)** to subtract 1 yard from current play
-  - Press **Z** to log play as a Rush with current yardage
-  - Press **X** to log play as a Pass with current yardage
+  - Works independently - can adjust yards anytime, not just after right-click
   - Counter resets to 0 after logging each play
 - **Current Play Card**: Visual display in Football mode showing real-time yards counter with color coding
   - Green text for positive yardage
@@ -85,6 +88,7 @@ SportSight is a full-stack application leveraging a modern web architecture.
 - **Data Structure**: New `FootballPlay` interface with type (rush/pass), yards, player info, team, and timestamp
 - **Data Persistence**: `footballPlays` array stored in localStorage with auto-save every 1 second
 - **Keyboard Blocking**: Z, X, +, -, _, = keys blocked from player hotkey assignment to prevent conflicts
+- **Technical Fix**: Resolved stale closure bug by using refs (`waitingForShotResultRef`, `currentPlayYardsRef`) with `useEffect` sync instead of direct state access in event handlers
 
 ## Previous Updates (Oct 18, 2025)
 
