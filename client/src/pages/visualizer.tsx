@@ -166,7 +166,7 @@ interface GameState {
 interface PlayEvent {
   id: string;
   timestamp: number;
-  type: "score" | "possession" | "period" | "baseball_event" | "football_down";
+  type: "score" | "possession" | "period" | "baseball_event" | "football_down" | "play";
   description: string;
   gameState?: Partial<GameState>;
 }
@@ -3575,45 +3575,64 @@ export default function Visualizer() {
             
             {/* Football Pass/Rush Chart */}
             {state.sport === "football" && (() => {
-              const filteredPasses = (state.footballPasses || []).filter(pass => {
-                if (pass.team !== selectedTeamFilter) return false;
-                if (selectedPlayerFilter !== "all" && pass.playerJersey !== selectedPlayerFilter) return false;
+              const filteredPlays = (state.footballPlays || []).filter(play => {
+                if (play.team !== selectedTeamFilter) return false;
+                if (selectedPlayerFilter !== "all" && play.playerJersey !== selectedPlayerFilter) return false;
                 return true;
               });
-              const completed = filteredPasses.filter(p => p.completed).length;
-              const avgDist = filteredPasses.length > 0 ? 
-                Math.round(filteredPasses.reduce((sum, p) => sum + p.distance, 0) / filteredPasses.length) : 0;
-              const compPct = filteredPasses.length > 0 ? Math.round((completed / filteredPasses.length) * 100) : 0;
+              const rushes = filteredPlays.filter(p => p.type === "rush");
+              const passes = filteredPlays.filter(p => p.type === "pass");
+              const totalRushYards = rushes.reduce((sum, p) => sum + p.yards, 0);
+              const totalPassYards = passes.reduce((sum, p) => sum + p.yards, 0);
+              const avgRushYards = rushes.length > 0 ? (totalRushYards / rushes.length).toFixed(1) : "0.0";
+              const avgPassYards = passes.length > 0 ? (totalPassYards / passes.length).toFixed(1) : "0.0";
               
               return (
                 <div className="space-y-4">
-                  <div className="text-base font-bold bg-muted p-3 rounded">
-                    Total: {filteredPasses.length} | Completed: {completed} | Comp%: {compPct}% | Avg: {avgDist} yds
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-blue-500/20 p-3 rounded">
+                      <div className="text-xs text-muted-foreground">RUSHING</div>
+                      <div className="text-2xl font-bold">{rushes.length} plays</div>
+                      <div className="text-sm">{totalRushYards} yards | {avgRushYards} avg</div>
+                    </div>
+                    <div className="bg-green-500/20 p-3 rounded">
+                      <div className="text-xs text-muted-foreground">PASSING</div>
+                      <div className="text-2xl font-bold">{passes.length} plays</div>
+                      <div className="text-sm">{totalPassYards} yards | {avgPassYards} avg</div>
+                    </div>
                   </div>
-                  <div className="relative w-full bg-[#2d5016] rounded shadow-lg" style={{ paddingBottom: "56.25%" }}>
-                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1920 1080">
-                      {/* Football field - matching actual field dimensions */}
-                      <rect x="100" y="200" width="1720" height="680" stroke="white" strokeWidth="8" fill="none"/>
-                      {/* Yard lines */}
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => (
-                        <line key={i} x1={100 + i * 172} y1="200" x2={100 + i * 172} y2="880" stroke="white" strokeWidth="6"/>
-                      ))}
-                      {/* Passes */}
-                      {filteredPasses.map(pass => (
-                        <g key={pass.id}>
-                          <line
-                            x1={pass.startX}
-                            y1={pass.startY}
-                            x2={pass.endX}
-                            y2={pass.endY}
-                            stroke={pass.completed ? "#22c55e" : "#ef4444"}
-                            strokeWidth="5"
-                            opacity="0.8"
-                          />
-                          <circle cx={pass.endX} cy={pass.endY} r="15" fill={pass.completed ? "#22c55e" : "#ef4444"} opacity="0.9"/>
-                        </g>
-                      ))}
-                    </svg>
+                  
+                  <div className="max-h-96 overflow-y-auto">
+                    <table className="w-full text-sm">
+                      <thead className="sticky top-0 bg-background">
+                        <tr className="border-b">
+                          <th className="text-left p-2">Type</th>
+                          <th className="text-left p-2">Player</th>
+                          <th className="text-right p-2">Yards</th>
+                          <th className="text-right p-2">Time</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredPlays.map(play => (
+                          <tr key={play.id} className="border-b hover:bg-muted/50">
+                            <td className="p-2">
+                              <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                play.type === "rush" ? "bg-blue-500/30 text-blue-300" : "bg-green-500/30 text-green-300"
+                              }`}>
+                                {play.type === "rush" ? "RUSH" : "PASS"}
+                              </span>
+                            </td>
+                            <td className="p-2">{play.playerName} #{play.playerJersey}</td>
+                            <td className={`text-right p-2 font-bold ${play.yards > 0 ? "text-green-400" : play.yards < 0 ? "text-red-400" : ""}`}>
+                              {play.yards > 0 ? "+" : ""}{play.yards}
+                            </td>
+                            <td className="text-right p-2 text-muted-foreground text-xs">
+                              {new Date(play.timestamp).toLocaleTimeString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               );
@@ -3691,7 +3710,7 @@ export default function Visualizer() {
                   if (state.sport === "basketball") {
                     setState(prev => ({ ...prev, basketballShots: [] }));
                   } else if (state.sport === "football") {
-                    setState(prev => ({ ...prev, footballPasses: [] }));
+                    setState(prev => ({ ...prev, footballPlays: [], footballPasses: [] }));
                   } else {
                     setState(prev => ({ ...prev, baseballHits: [] }));
                   }
