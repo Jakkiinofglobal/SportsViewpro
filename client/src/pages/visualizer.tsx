@@ -2269,12 +2269,7 @@ export default function Visualizer() {
 
         {/* Scoreboard */}
         <Card className="p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Scoreboard</Label>
-            {state.sport === "basketball" && (
-              <span className="text-xs text-muted-foreground">(Press SPACE BAR before ea. FT)</span>
-            )}
-          </div>
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Scoreboard</Label>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm font-mono">{state.homeTeam}</span>
@@ -3405,12 +3400,20 @@ export default function Visualizer() {
         </div>
 
         {/* Bottom Hints */}
-        <div className="h-12 bg-card/90 backdrop-blur-md border-t border-card-border flex items-center justify-center px-6">
-          <div className="text-xs text-muted-foreground">
-            <span className="font-semibold">Arrows:</span> Move Ball &nbsp;|&nbsp;
-            <span className="font-semibold">Shift:</span> Sprint &nbsp;|&nbsp;
-            <span className="font-semibold">Space:</span> Pulse &nbsp;|&nbsp;
-            <span className="font-semibold">Mouse:</span> Click & Drag
+        <div className="bg-card/90 backdrop-blur-md border-t border-card-border flex items-center justify-center px-6 py-2">
+          <div className="text-xs text-muted-foreground text-center">
+            <div>
+              <span className="font-semibold">Arrows:</span> Move Ball &nbsp;|&nbsp;
+              <span className="font-semibold">Shift:</span> Sprint &nbsp;|&nbsp;
+              <span className="font-semibold">Space:</span> Pulse &nbsp;|&nbsp;
+              <span className="font-semibold">Mouse:</span> Click & Drag
+            </div>
+            <div className="mt-1">
+              <span className="font-semibold">Right-Click Ball:</span> Log Stat &nbsp;
+              {state.sport === "basketball" && (
+                <>|&nbsp; <span className="font-semibold">SPACE before shot:</span> Mark as Free Throw</>
+              )}
+            </div>
           </div>
         </div>
       </div>
