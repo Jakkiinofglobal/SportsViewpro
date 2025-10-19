@@ -19,13 +19,14 @@ SportSight is a full-stack application utilizing a modern web architecture.
 
 **Technical Implementations:**
 *   **Core Mechanics:** Keyboard/mouse ball control, scoreboard management, team/roster handling, possession tracking, and game clock with speed multiplier.
-*   **Sport-Specific Features:** Basketball (shot clock, free throw system, 3PT% tracking), Football (play clock, down & distance, yardage tracking, Pass/Rush Chart), Baseball (Ball/Strike/Out counter, runner tracking, at-bat system).
+*   **Sport-Specific Features:** Basketball (shot clock, free throw system, 3PT% tracking), Football (play clock, down & distance, yardage tracking, Pass/Rush Chart), Baseball (Ball/Strike/Out counter, runner tracking, at-bat system, HIT/STRIKE logging).
 *   **Visual Enhancements:** Customizable home team logo, goal lighting effects, video clip system, and flexible camera controls.
 *   **Data & Analytics:** Real-time play history logging, game stats dashboard, sport-specific shot/pass/hit chart tracking with analytics modal, and session export functionality (JSON, CSV).
-*   **Input & Interaction:** Full gamepad/controller support, unified hotkey system for players, and a revised "Enter key" system for shot/pass/hit logging.
+*   **Input & Interaction:** Full gamepad/controller support, unified hotkey system for players, and two-step workflow for shot/pass/hit logging (Enter/RT/Right-click to capture → Z/Y for made, X for miss).
 *   **Audio:** Web Audio API for sound effects with volume controls.
 *   **Monetization & Management:** Implemented with 5 subscription tiers controlling feature access, user authentication, and an admin dashboard for user management.
 *   **Persistence:** `localStorage` API for game session persistence, storing game state, settings, hotkeys, stats, and history.
+*   **Sport Selection Sync:** User's selected sport from sport selection page syncs to visualizer state on mount via useEffect.
 
 **System Design Choices:**
 *   **Full-Stack Application:**
