@@ -653,22 +653,30 @@ export default function Visualizer() {
     drawFieldGoal(100);  // Left endzone
     drawFieldGoal(1820); // Right endzone
     
-    // Draw team labels
+    // Draw team labels (rotated vertically)
     ctx.save();
     ctx.font = "bold 48px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    
-    // Left endzone - HOME
     ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
     ctx.strokeStyle = "rgba(0, 0, 0, 0.4)";
     ctx.lineWidth = 2;
-    ctx.strokeText("HOME", 150, 540);
-    ctx.fillText("HOME", 150, 540);
     
-    // Right endzone - AWAY
-    ctx.strokeText("AWAY", 1770, 540);
-    ctx.fillText("AWAY", 1770, 540);
+    // Left endzone - HOME (reads bottom to top)
+    ctx.save();
+    ctx.translate(150, 540);
+    ctx.rotate(-Math.PI / 2);
+    ctx.strokeText("HOME", 0, 0);
+    ctx.fillText("HOME", 0, 0);
+    ctx.restore();
+    
+    // Right endzone - AWAY (reads top to bottom)
+    ctx.save();
+    ctx.translate(1770, 540);
+    ctx.rotate(Math.PI / 2);
+    ctx.strokeText("AWAY", 0, 0);
+    ctx.fillText("AWAY", 0, 0);
+    ctx.restore();
     
     ctx.restore();
   };
