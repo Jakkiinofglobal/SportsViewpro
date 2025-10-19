@@ -130,7 +130,13 @@ interface GameState {
   balls: number;
   strikes: number;
   outs: number;
-  runners: { first: string; second: string; third: string };
+  atBatName: string;
+  atBatNumber: string;
+  runners: { 
+    first: { name: string; number: string } | null; 
+    second: { name: string; number: string } | null; 
+    third: { name: string; number: string } | null; 
+  };
   
   // Ball
   ballX: number;
@@ -254,7 +260,9 @@ export default function Visualizer() {
     balls: 0,
     strikes: 0,
     outs: 0,
-    runners: { first: "", second: "", third: "" },
+    atBatName: "",
+    atBatNumber: "",
+    runners: { first: null, second: null, third: null },
     ballX: 960,
     ballY: 540,
     ballVelX: 0,
@@ -785,27 +793,60 @@ export default function Visualizer() {
   };
 
   const drawRunners = (ctx: CanvasRenderingContext2D) => {
-    const { runners } = state;
+    const { runners, atBatName, atBatNumber } = state;
+    
+    // Base positions (going right to left from home: 3B → 2B → 1B)
     const bases = [
-      { x: 500, y: 440, runner: runners.first },
-      { x: 960, y: 180, runner: runners.second },
-      { x: 1420, y: 440, runner: runners.third },
+      { x: 1420, y: 440, runner: runners.third, label: "3B" },
+      { x: 960, y: 180, runner: runners.second, label: "2B" },
+      { x: 500, y: 440, runner: runners.first, label: "1B" },
     ];
     
+    // Draw runners on bases
     bases.forEach(base => {
       if (base.runner) {
         ctx.fillStyle = "rgba(234, 179, 8, 0.9)";
         ctx.beginPath();
-        ctx.arc(base.x, base.y - 50, 18, 0, Math.PI * 2);
+        ctx.arc(base.x, base.y - 50, 20, 0, Math.PI * 2);
         ctx.fill();
         
         ctx.fillStyle = "#000000";
-        ctx.font = "600 14px 'JetBrains Mono'";
+        ctx.font = "700 16px 'JetBrains Mono'";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(base.runner, base.x, base.y - 50);
+        ctx.fillText(`#${base.runner.number}`, base.x, base.y - 50);
+        
+        // Draw name below the circle
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "600 12px 'JetBrains Mono'";
+        ctx.fillText(base.runner.name, base.x, base.y - 25);
       }
     });
+    
+    // Draw "AT BAT" indicator near home plate if someone is at bat
+    if (atBatName) {
+      const homeX = 960;
+      const homeY = 900;
+      
+      ctx.fillStyle = "rgba(239, 68, 68, 0.9)";
+      ctx.beginPath();
+      ctx.arc(homeX, homeY - 60, 22, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "700 16px 'JetBrains Mono'";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(`#${atBatNumber}`, homeX, homeY - 60);
+      
+      // Draw name and "AT BAT" label
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "600 12px 'JetBrains Mono'";
+      ctx.fillText(atBatName, homeX, homeY - 35);
+      ctx.font = "700 10px 'JetBrains Mono'";
+      ctx.fillStyle = "rgba(239, 68, 68, 1)";
+      ctx.fillText("AT BAT", homeX, homeY - 20);
+    }
   };
 
   // Render loop
@@ -1076,20 +1117,38 @@ export default function Visualizer() {
         }
       }
 
-      // B Button (1) → Cycle Ball Carrier (next player with hotkey)
+      // B Button (1) → Cycle Ball Carrier / At Bat
       if (justPressed(1)) {
-        const currentIndex = stateRef.current.playerHotkeys.findIndex(
-          h => h.jersey === stateRef.current.carrierNumber
-        );
-        const nextIndex = (currentIndex + 1) % stateRef.current.playerHotkeys.length;
-        const nextPlayer = stateRef.current.playerHotkeys[nextIndex];
-        if (nextPlayer) {
-          setState(prev => ({
-            ...prev,
-            carrierNumber: nextPlayer.jersey,
-            carrierName: nextPlayer.name
-          }));
-          toast({ description: `${nextPlayer.name} #${nextPlayer.jersey} set as carrier` });
+        if (stateRef.current.sport === "baseball") {
+          // Baseball: Cycle "at bat" player (not ball carrier)
+          const currentIndex = stateRef.current.playerHotkeys.findIndex(
+            h => h.jersey === stateRef.current.atBatNumber
+          );
+          const nextIndex = (currentIndex + 1) % stateRef.current.playerHotkeys.length;
+          const nextPlayer = stateRef.current.playerHotkeys[nextIndex];
+          if (nextPlayer) {
+            setState(prev => ({
+              ...prev,
+              atBatNumber: nextPlayer.jersey,
+              atBatName: nextPlayer.name
+            }));
+            toast({ description: `${nextPlayer.name} #${nextPlayer.jersey} at bat` });
+          }
+        } else {
+          // Basketball/Football: Cycle ball carrier
+          const currentIndex = stateRef.current.playerHotkeys.findIndex(
+            h => h.jersey === stateRef.current.carrierNumber
+          );
+          const nextIndex = (currentIndex + 1) % stateRef.current.playerHotkeys.length;
+          const nextPlayer = stateRef.current.playerHotkeys[nextIndex];
+          if (nextPlayer) {
+            setState(prev => ({
+              ...prev,
+              carrierNumber: nextPlayer.jersey,
+              carrierName: nextPlayer.name
+            }));
+            toast({ description: `${nextPlayer.name} #${nextPlayer.jersey} set as carrier` });
+          }
         }
       }
 
@@ -1350,12 +1409,23 @@ export default function Visualizer() {
       // Check for player hotkeys
       const playerHotkey = stateRef.current.playerHotkeys.find(h => h.hotkey.toLowerCase() === e.key.toLowerCase());
       if (playerHotkey) {
-        setState(prev => ({ 
-          ...prev, 
-          carrierNumber: playerHotkey.jersey,
-          carrierName: playerHotkey.name 
-        }));
-        toast({ description: `${playerHotkey.name} (#${playerHotkey.jersey}) set as carrier` });
+        if (stateRef.current.sport === "baseball") {
+          // Baseball: Set as "at bat" player
+          setState(prev => ({ 
+            ...prev, 
+            atBatNumber: playerHotkey.jersey,
+            atBatName: playerHotkey.name 
+          }));
+          toast({ description: `${playerHotkey.name} (#${playerHotkey.jersey}) at bat` });
+        } else {
+          // Basketball/Football: Set as ball carrier
+          setState(prev => ({ 
+            ...prev, 
+            carrierNumber: playerHotkey.jersey,
+            carrierName: playerHotkey.name 
+          }));
+          toast({ description: `${playerHotkey.name} (#${playerHotkey.jersey}) set as carrier` });
+        }
         return;
       }
       
@@ -1902,16 +1972,22 @@ export default function Visualizer() {
         // For Baseball: Clear runners if they belong to home team
         if (prev.sport === "baseball") {
           const newRunners = { ...prev.runners };
-          if (prev.runners.first && prev.homeRoster.includes(prev.runners.first)) {
-            newRunners.first = "";
+          if (prev.runners.first && prev.homeRoster.includes(prev.runners.first.name)) {
+            newRunners.first = null;
           }
-          if (prev.runners.second && prev.homeRoster.includes(prev.runners.second)) {
-            newRunners.second = "";
+          if (prev.runners.second && prev.homeRoster.includes(prev.runners.second.name)) {
+            newRunners.second = null;
           }
-          if (prev.runners.third && prev.homeRoster.includes(prev.runners.third)) {
-            newRunners.third = "";
+          if (prev.runners.third && prev.homeRoster.includes(prev.runners.third.name)) {
+            newRunners.third = null;
           }
           updates.runners = newRunners;
+          
+          // Clear at-bat if they're from home team
+          if (prev.atBatName && prev.homeRoster.includes(prev.atBatName)) {
+            updates.atBatName = "";
+            updates.atBatNumber = "";
+          }
         }
         
         return { ...prev, ...updates };
@@ -1936,16 +2012,22 @@ export default function Visualizer() {
         // For Baseball: Clear runners if they belong to away team
         if (prev.sport === "baseball") {
           const newRunners = { ...prev.runners };
-          if (prev.runners.first && prev.awayRoster.includes(prev.runners.first)) {
-            newRunners.first = "";
+          if (prev.runners.first && prev.awayRoster.includes(prev.runners.first.name)) {
+            newRunners.first = null;
           }
-          if (prev.runners.second && prev.awayRoster.includes(prev.runners.second)) {
-            newRunners.second = "";
+          if (prev.runners.second && prev.awayRoster.includes(prev.runners.second.name)) {
+            newRunners.second = null;
           }
-          if (prev.runners.third && prev.awayRoster.includes(prev.runners.third)) {
-            newRunners.third = "";
+          if (prev.runners.third && prev.awayRoster.includes(prev.runners.third.name)) {
+            newRunners.third = null;
           }
           updates.runners = newRunners;
+          
+          // Clear at-bat if they're from away team
+          if (prev.atBatName && prev.awayRoster.includes(prev.atBatName)) {
+            updates.atBatName = "";
+            updates.atBatNumber = "";
+          }
         }
         
         return { ...prev, ...updates };
@@ -3240,7 +3322,7 @@ export default function Visualizer() {
                       if (newOuts >= 3) {
                         const newHalf = prev.inningHalf === "top" ? "bottom" : "top";
                         const newInning = newHalf === "top" ? prev.inning + 1 : prev.inning;
-                        return { ...prev, strikes: 0, balls: 0, outs: 0, inningHalf: newHalf, inning: newInning, runners: { first: "", second: "", third: "" } };
+                        return { ...prev, strikes: 0, balls: 0, outs: 0, inningHalf: newHalf, inning: newInning, runners: { first: null, second: null, third: null }, atBatName: "", atBatNumber: "" };
                       }
                       return { ...prev, strikes: 0, balls: 0, outs: newOuts };
                     }
@@ -3258,7 +3340,7 @@ export default function Visualizer() {
                     if (newOuts >= 3) {
                       const newHalf = prev.inningHalf === "top" ? "bottom" : "top";
                       const newInning = newHalf === "top" ? prev.inning + 1 : prev.inning;
-                      return { ...prev, strikes: 0, balls: 0, outs: 0, inningHalf: newHalf, inning: newInning, runners: { first: "", second: "", third: "" } };
+                      return { ...prev, strikes: 0, balls: 0, outs: 0, inningHalf: newHalf, inning: newInning, runners: { first: null, second: null, third: null }, atBatName: "", atBatNumber: "" };
                     }
                     return { ...prev, balls: 0, strikes: 0, outs: newOuts };
                   })}
@@ -3269,29 +3351,50 @@ export default function Visualizer() {
               <Button data-testid="button-reset-count" size="sm" variant="outline" onClick={() => setState(prev => ({ ...prev, balls: 0, strikes: 0, outs: 0 }))} className="w-full">Reset Count</Button>
             </Card>
             <Card className="p-4 space-y-3">
-              <Label className="text-xs uppercase tracking-wide text-muted-foreground">Runners</Label>
-              <div className="flex gap-2">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">At Bat</Label>
+              <div className="text-sm text-center py-2 bg-muted rounded font-mono">
+                {state.atBatName ? `${state.atBatName} #${state.atBatNumber}` : "No batter set"}
+              </div>
+            </Card>
+            <Card className="p-4 space-y-3">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">Hit Result</Label>
+              <div className="grid grid-cols-2 gap-2">
                 <Button
                   data-testid="button-advance-1b"
                   size="sm"
                   variant="outline"
                   onClick={() => setState(prev => {
-                    if (!prev.carrierNumber) return prev;
-                    const updates: Partial<GameState> = {};
-                    const newRunners = { ...prev.runners };
-                    
-                    if (newRunners.third) {
-                      const team = prev.possession === "home" ? "homeScore" : "awayScore";
-                      updates[team] = prev[team] + 1;
+                    if (!prev.atBatName) {
+                      toast({ description: "No batter at bat", variant: "destructive" });
+                      return prev;
                     }
+                    const team = prev.possession === "home" ? "homeScore" : "awayScore";
+                    const newRunners = { ...prev.runners };
+                    let runs = 0;
                     
+                    // Runner on 3rd scores
+                    if (newRunners.third) runs++;
+                    
+                    // Advance all runners (3rd→home, 2nd→3rd, 1st→2nd)
                     newRunners.third = newRunners.second;
                     newRunners.second = newRunners.first;
-                    newRunners.first = prev.carrierNumber;
+                    newRunners.first = { name: prev.atBatName, number: prev.atBatNumber };
                     
-                    return { ...prev, ...updates, runners: newRunners };
+                    // Trigger goal flash if runs scored
+                    if (runs > 0) {
+                      goalFlash.current = { active: true, team: prev.possession, startTime: performance.now() };
+                    }
+                    
+                    return { 
+                      ...prev, 
+                      [team]: prev[team] + runs,
+                      runners: newRunners, 
+                      atBatName: "", 
+                      atBatNumber: "",
+                      balls: 0,
+                      strikes: 0
+                    };
                   })}
-                  className="flex-1"
                 >
                   1B
                 </Button>
@@ -3300,26 +3403,38 @@ export default function Visualizer() {
                   size="sm"
                   variant="outline"
                   onClick={() => setState(prev => {
-                    if (!prev.carrierNumber) return prev;
-                    const updates: Partial<GameState> = {};
+                    if (!prev.atBatName) {
+                      toast({ description: "No batter at bat", variant: "destructive" });
+                      return prev;
+                    }
+                    const team = prev.possession === "home" ? "homeScore" : "awayScore";
                     const newRunners = { ...prev.runners };
-                    
                     let runs = 0;
+                    
+                    // Runners on 3rd and 2nd score
                     if (newRunners.third) runs++;
                     if (newRunners.second) runs++;
                     
+                    // Advance (1st→3rd, batter→2nd)
+                    newRunners.third = newRunners.first;
+                    newRunners.second = { name: prev.atBatName, number: prev.atBatNumber };
+                    newRunners.first = null;
+                    
+                    // Trigger goal flash if runs scored
                     if (runs > 0) {
-                      const team = prev.possession === "home" ? "homeScore" : "awayScore";
-                      updates[team] = prev[team] + runs;
+                      goalFlash.current = { active: true, team: prev.possession, startTime: performance.now() };
                     }
                     
-                    newRunners.third = newRunners.first;
-                    newRunners.second = prev.carrierNumber;
-                    newRunners.first = "";
-                    
-                    return { ...prev, ...updates, runners: newRunners };
+                    return { 
+                      ...prev, 
+                      [team]: prev[team] + runs,
+                      runners: newRunners, 
+                      atBatName: "", 
+                      atBatNumber: "",
+                      balls: 0,
+                      strikes: 0
+                    };
                   })}
-                  className="flex-1"
                 >
                   2B
                 </Button>
@@ -3328,32 +3443,77 @@ export default function Visualizer() {
                   size="sm"
                   variant="outline"
                   onClick={() => setState(prev => {
-                    if (!prev.carrierNumber) return prev;
-                    const updates: Partial<GameState> = {};
+                    if (!prev.atBatName) {
+                      toast({ description: "No batter at bat", variant: "destructive" });
+                      return prev;
+                    }
+                    const team = prev.possession === "home" ? "homeScore" : "awayScore";
                     const newRunners = { ...prev.runners };
-                    
                     let runs = 0;
+                    
+                    // All runners score
                     if (newRunners.third) runs++;
                     if (newRunners.second) runs++;
                     if (newRunners.first) runs++;
                     
+                    // Batter goes to 3rd, bases cleared
+                    newRunners.third = { name: prev.atBatName, number: prev.atBatNumber };
+                    newRunners.second = null;
+                    newRunners.first = null;
+                    
+                    // Trigger goal flash if runs scored
                     if (runs > 0) {
-                      const team = prev.possession === "home" ? "homeScore" : "awayScore";
-                      updates[team] = prev[team] + runs;
+                      goalFlash.current = { active: true, team: prev.possession, startTime: performance.now() };
                     }
                     
-                    newRunners.third = prev.carrierNumber;
-                    newRunners.second = "";
-                    newRunners.first = "";
-                    
-                    return { ...prev, ...updates, runners: newRunners };
+                    return { 
+                      ...prev, 
+                      [team]: prev[team] + runs,
+                      runners: newRunners, 
+                      atBatName: "", 
+                      atBatNumber: "",
+                      balls: 0,
+                      strikes: 0
+                    };
                   })}
-                  className="flex-1"
                 >
                   3B
                 </Button>
+                <Button
+                  data-testid="button-advance-hr"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setState(prev => {
+                    if (!prev.atBatName) {
+                      toast({ description: "No batter at bat", variant: "destructive" });
+                      return prev;
+                    }
+                    const team = prev.possession === "home" ? "homeScore" : "awayScore";
+                    let runs = 1; // Batter scores
+                    
+                    // All runners score
+                    if (prev.runners.third) runs++;
+                    if (prev.runners.second) runs++;
+                    if (prev.runners.first) runs++;
+                    
+                    // Trigger goal flash
+                    goalFlash.current = { active: true, team: prev.possession, startTime: performance.now() };
+                    
+                    return { 
+                      ...prev, 
+                      [team]: prev[team] + runs,
+                      runners: { first: null, second: null, third: null }, 
+                      atBatName: "", 
+                      atBatNumber: "",
+                      balls: 0,
+                      strikes: 0
+                    };
+                  })}
+                >
+                  HR
+                </Button>
               </div>
-              <Button data-testid="button-clear-bases" size="sm" variant="outline" onClick={() => setState(prev => ({ ...prev, runners: { first: "", second: "", third: "" } }))} className="w-full">Clear Bases</Button>
+              <Button data-testid="button-clear-bases" size="sm" variant="outline" onClick={() => setState(prev => ({ ...prev, runners: { first: null, second: null, third: null } }))} className="w-full">Clear Bases</Button>
             </Card>
             <Card className="p-4 space-y-3">
               <Label className="text-xs uppercase tracking-wide text-muted-foreground">Inning</Label>
