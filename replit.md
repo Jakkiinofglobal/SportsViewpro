@@ -66,7 +66,7 @@ SportSight is a full-stack application leveraging a modern web architecture.
 ## Recent Updates (Oct 19, 2025)
 
 ### Basketball Hoop Refinements & Player Label Scaling
-- **Hoop Positioning**: Orange hoops repositioned to x=240 and x=1680 (moved inward from edges toward center)
+- **Hoop Positioning**: Orange hoops positioned at x=230 and x=1690, perfectly aligned with court image backboards
   - Reduced hoop radius from 25px to 20px for more accurate court image alignment
   - Removed white backboards (rim-only rendering)
   - Removed net lines for cleaner visual
