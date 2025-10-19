@@ -2324,11 +2324,20 @@ export default function Visualizer() {
 
           {/* Current Carrier Display */}
           {state.carrierNumber && (
-            <div className="border-t pt-2">
+            <div className="border-t pt-2 space-y-2">
               <div className="text-xs text-muted-foreground mb-1">Current {state.sport === "baseball" ? "At-Bat" : "Ball Carrier"}:</div>
               <div className="text-sm font-semibold text-center">
                 {state.carrierName} #{state.carrierNumber}
               </div>
+              <Button
+                data-testid="button-clear-carrier"
+                size="sm"
+                variant="outline"
+                onClick={() => setState(prev => ({ ...prev, carrierNumber: "", carrierName: "" }))}
+                className="w-full"
+              >
+                Clear {state.sport === "baseball" ? "At-Bat" : "Ball Carrier"}
+              </Button>
             </div>
           )}
         </Card>
