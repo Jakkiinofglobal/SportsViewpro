@@ -444,6 +444,16 @@ export default function Visualizer() {
     }
   }, []);
 
+  // Load sport from user's selection
+  useEffect(() => {
+    if (user?.selectedSport) {
+      setState(prev => ({
+        ...prev,
+        sport: user.selectedSport as Sport
+      }));
+    }
+  }, [user?.selectedSport]);
+
   // Keep state ref updated
   useEffect(() => {
     stateRef.current = state;
@@ -1270,11 +1280,11 @@ export default function Visualizer() {
             id: hit.id,
             timestamp: hit.timestamp,
             type: "play" as const,
-            description: `${currentState.atBatName} recorded a HIT`
+            description: `${currentState.atBatName || "Unknown"} recorded a HIT`
           }, ...prev].slice(0, 100));
           
           setWaitingForShotResult(false);
-          toast({ description: `HIT by ${currentState.atBatName}!` });
+          toast({ description: `HIT by ${currentState.atBatName || "Unknown"}!` });
         }
       }
 
@@ -1359,11 +1369,11 @@ export default function Visualizer() {
             id: hit.id,
             timestamp: hit.timestamp,
             type: "play" as const,
-            description: `${currentState.atBatName} swung and missed (STRIKE)`
+            description: `${currentState.atBatName || "Unknown"} swung and missed (STRIKE)`
           }, ...prev].slice(0, 100));
           
           setWaitingForShotResult(false);
-          toast({ description: `STRIKE by ${currentState.atBatName}` });
+          toast({ description: `STRIKE by ${currentState.atBatName || "Unknown"}` });
         }
       }
 
@@ -1639,8 +1649,8 @@ export default function Visualizer() {
             timestamp: hit.timestamp,
             type: "play" as const,
             description: isHit 
-              ? `${currentState.atBatName} recorded a HIT` 
-              : `${currentState.atBatName} swung and missed (STRIKE)`
+              ? `${currentState.atBatName || "Unknown"} recorded a HIT` 
+              : `${currentState.atBatName || "Unknown"} swung and missed (STRIKE)`
           }, ...prev].slice(0, 100));
           
           // Reset waiting state
@@ -1648,8 +1658,8 @@ export default function Visualizer() {
           
           toast({ 
             description: isHit 
-              ? `HIT by ${currentState.atBatName}!` 
-              : `STRIKE by ${currentState.atBatName}` 
+              ? `HIT by ${currentState.atBatName || "Unknown"}!` 
+              : `STRIKE by ${currentState.atBatName || "Unknown"}` 
           });
           return;
         }
