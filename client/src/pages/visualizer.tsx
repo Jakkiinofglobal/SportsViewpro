@@ -597,22 +597,22 @@ export default function Visualizer() {
       ctx.strokeStyle = "#ffcc00";
       ctx.lineWidth = 8;
       
-      // Uprights
+      // Uprights - narrower to fit between white yard lines
       ctx.beginPath();
-      ctx.moveTo(x, 200);
-      ctx.lineTo(x, 50);
+      ctx.moveTo(x, 270);
+      ctx.lineTo(x, 120);
       ctx.stroke();
       
       ctx.beginPath();
-      ctx.moveTo(x, 880);
-      ctx.lineTo(x, 1030);
+      ctx.moveTo(x, 810);
+      ctx.lineTo(x, 960);
       ctx.stroke();
       
-      // Crossbar
+      // Crossbar - shorter to match narrower uprights
       ctx.lineWidth = 6;
       ctx.beginPath();
-      ctx.moveTo(x, 200);
-      ctx.lineTo(x, 880);
+      ctx.moveTo(x, 270);
+      ctx.lineTo(x, 810);
       ctx.stroke();
     };
     
