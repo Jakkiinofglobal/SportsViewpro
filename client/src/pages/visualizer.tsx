@@ -1070,19 +1070,20 @@ export default function Visualizer() {
       }
       
       // TWO-STEP SYSTEM: 
-      // Step 1: Press Enter → Ready to log
-      // Step 2: Press M for made, X for missed
-      if (e.key === "Enter" && planLimits.canUseShotCharts && !waitingForShotResult) {
-        e.preventDefault();
-        setWaitingForShotResult(true);
-        toast({ description: "Ready to log shot - Press M for MADE or X for MISSED" });
+      // Step 1: Left-click on ball → Ready to log
+      // Step 2: Press Z for made, X for missed, Escape to cancel
+      
+      // Cancel shot logging if Escape pressed
+      if (waitingForShotResult && e.key === "Escape") {
+        setWaitingForShotResult(false);
+        toast({ description: "Shot logging cancelled" });
         return;
       }
       
-      // Step 2: User presses M (made) or X (missed)
-      if (waitingForShotResult && (e.key.toLowerCase() === "m" || e.key.toLowerCase() === "x")) {
+      // Step 2: User presses Z (made) or X (missed)
+      if (waitingForShotResult && (e.key.toLowerCase() === "z" || e.key.toLowerCase() === "x")) {
         e.preventDefault();
-        const made = e.key.toLowerCase() === "m";
+        const made = e.key.toLowerCase() === "z";
         const currentState = stateRef.current;
         const currentTeam = currentState.possession;
         const ballX = ballPhysics.current.x;
@@ -1317,10 +1318,18 @@ export default function Visualizer() {
         }
       }
       
-      // Right-click OR close to ball = drag ball (always enabled)
+      // Right-click = drag ball (always enabled)
       const dist = Math.sqrt((x - ballPhysics.current.x) ** 2 + (y - ballPhysics.current.y) ** 2);
-      if (e.button === 2 || dist < state.ballSize + 10) {
+      if (e.button === 2 && dist < state.ballSize + 10) {
         isDraggingBall.current = true;
+        e.preventDefault();
+        return;
+      }
+      
+      // Left-click on ball = ready to shoot (if shot charts enabled)
+      if (e.button === 0 && dist < state.ballSize + 10 && planLimits.canUseShotCharts && !waitingForShotResult) {
+        setWaitingForShotResult(true);
+        toast({ description: "Ready to log shot - Press Z for MADE or X for MISSED" });
         e.preventDefault();
       }
     };
@@ -1428,6 +1437,12 @@ export default function Visualizer() {
       // Validate hotkey
       if (!hotkey || !/^[0-9a-z]$/.test(hotkey.toLowerCase())) {
         errors.push(`Invalid hotkey "${hotkey}" (must be 0-9 or a-z)`);
+        continue;
+      }
+      
+      // Block Z and X (reserved for shot logging)
+      if (hotkey.toLowerCase() === "z" || hotkey.toLowerCase() === "x") {
+        errors.push(`Cannot use "${hotkey}" as hotkey (reserved for shot logging: Z=Made, X=Missed)`);
         continue;
       }
 
@@ -3357,16 +3372,18 @@ export default function Visualizer() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Players</SelectItem>
-                    {state.playerHotkeys
-                      .filter(h => {
-                        const isHomeTeam = state.homeRoster.includes(h.jersey);
-                        return selectedTeamFilter === "home" ? isHomeTeam : !isHomeTeam;
-                      })
-                      .map(h => (
-                        <SelectItem key={h.jersey} value={h.jersey}>
-                          {h.name} #{h.jersey}
-                        </SelectItem>
-                      ))}
+                    {(() => {
+                      const roster = selectedTeamFilter === "home" ? state.homeRoster : state.awayRoster;
+                      return roster.map(jersey => {
+                        const hotkey = state.playerHotkeys.find(h => h.jersey === jersey);
+                        const name = hotkey?.name || `Player`;
+                        return (
+                          <SelectItem key={jersey} value={jersey}>
+                            {name} #{jersey}
+                          </SelectItem>
+                        );
+                      });
+                    })()}
                   </SelectContent>
                 </Select>
               </div>
