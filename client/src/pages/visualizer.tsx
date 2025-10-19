@@ -3924,18 +3924,47 @@ export default function Visualizer() {
           )}
           
           <div className="text-xs text-muted-foreground text-center flex-1">
-            <div>
-              <span className="font-semibold">Arrows:</span> Move Ball &nbsp;|&nbsp;
-              <span className="font-semibold">Shift:</span> Sprint &nbsp;|&nbsp;
-              <span className="font-semibold">Space:</span> Pulse &nbsp;|&nbsp;
-              <span className="font-semibold">Mouse:</span> Click & Drag
-            </div>
-            <div className="mt-1">
-              <span className="font-semibold">Right-Click Ball:</span> Log Stat &nbsp;
-              {state.sport === "basketball" && (
-                <>|&nbsp; <span className="font-semibold">SPACE before shot:</span> Mark as Free Throw</>
-              )}
-            </div>
+            {gamepadConnected ? (
+              <>
+                <div>
+                  <span className="font-semibold">RT Press:</span> Shoot/Log &nbsp;|&nbsp;
+                  <span className="font-semibold">Y:</span> Make &nbsp;|&nbsp;
+                  <span className="font-semibold">X:</span> Miss &nbsp;|&nbsp;
+                  <span className="font-semibold">LB:</span> Game Clock &nbsp;|&nbsp;
+                  <span className="font-semibold">RB:</span> Possession
+                </div>
+                {state.sport === "basketball" && (
+                  <div className="mt-1">
+                    <span className="font-semibold">A:</span> Free Throw &nbsp;|&nbsp;
+                    <span className="font-semibold">LT:</span> Shot Clock &nbsp;|&nbsp;
+                    <span className="font-semibold">RT Hold:</span> Sprint
+                  </div>
+                )}
+                {state.sport === "football" && (
+                  <div className="mt-1">
+                    <span className="font-semibold">Y:</span> Rush &nbsp;|&nbsp;
+                    <span className="font-semibold">X:</span> Pass &nbsp;|&nbsp;
+                    <span className="font-semibold">LT:</span> Play Clock &nbsp;|&nbsp;
+                    <span className="font-semibold">RT Hold:</span> Sprint
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div>
+                  <span className="font-semibold">Arrows:</span> Move Ball &nbsp;|&nbsp;
+                  <span className="font-semibold">Shift:</span> Sprint &nbsp;|&nbsp;
+                  <span className="font-semibold">Space:</span> Pulse &nbsp;|&nbsp;
+                  <span className="font-semibold">Mouse:</span> Click & Drag
+                </div>
+                <div className="mt-1">
+                  <span className="font-semibold">Right-Click Ball:</span> Log Stat &nbsp;
+                  {state.sport === "basketball" && (
+                    <>|&nbsp; <span className="font-semibold">SPACE before shot:</span> Mark as Free Throw</>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
