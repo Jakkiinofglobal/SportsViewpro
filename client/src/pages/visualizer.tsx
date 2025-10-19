@@ -1065,7 +1065,7 @@ export default function Visualizer() {
       const isPressed = (index: number) => buttons[index]?.pressed;
       const justPressed = (index: number) => isPressed(index) && !wasPressed(index);
 
-      // A Button (0) → Pulse Ball
+      // A Button (0) → Pulse Ball / Free Throw Mode
       if (justPressed(0)) {
         pulseRing.current = { active: true, radius: 30, alpha: 1 };
         if (stateRef.current.sport === "basketball") {
@@ -1091,14 +1091,133 @@ export default function Visualizer() {
         }
       }
 
-      // X Button (2) → Home Score +1
+      // X Button (2) → Missed Shot/Play
       if (justPressed(2)) {
-        setState(prev => ({ ...prev, homeScore: prev.homeScore + 1 }));
+        const currentState = stateRef.current;
+        const currentTeam = currentState.possession;
+        const ballX = ballPhysics.current.x;
+        const ballY = ballPhysics.current.y;
+        
+        if (currentState.sport === "basketball") {
+          const isFT = isFreeThrowModeRef.current;
+          const zone = isFT ? { points: 1, zone: "FT" } : detectBasketballZone(ballX, ballY);
+          
+          const shot: ShotEvent = {
+            id: Date.now().toString(),
+            x: ballX,
+            y: ballY,
+            made: false,
+            playerName: currentState.carrierName || "Unknown",
+            playerJersey: currentState.carrierNumber || "00",
+            team: currentTeam,
+            timestamp: Date.now(),
+            isFreeThrow: isFT,
+            points: zone.points,
+          };
+          
+          setState(prev => ({
+            ...prev,
+            basketballShots: [...prev.basketballShots, shot]
+          }));
+          
+          setIsFreeThrowMode(false);
+          toast({ description: `${zone.zone} missed by ${currentState.carrierName}` });
+        } else if (currentState.sport === "football") {
+          const yards = currentPlayYardsRef.current;
+          
+          const play: FootballPlay = {
+            id: Date.now().toString(),
+            type: "pass",
+            yards,
+            playerName: currentState.carrierName || "Unknown",
+            playerJersey: currentState.carrierNumber || "00",
+            team: currentTeam,
+            timestamp: Date.now(),
+          };
+          
+          setState(prev => ({
+            ...prev,
+            footballPlays: [...prev.footballPlays, play]
+          }));
+          
+          setPlayHistory(prev => [{
+            id: play.id,
+            timestamp: play.timestamp,
+            type: "play" as const,
+            description: `${currentState.carrierName} passed for ${yards > 0 ? '+' : ''}${yards} yards`
+          }, ...prev].slice(0, 100));
+          
+          setCurrentPlayYards(0);
+          toast({ description: `Pass: ${currentState.carrierName} ${yards > 0 ? '+' : ''}${yards} yards` });
+        }
       }
 
-      // Y Button (3) → Away Score +1
-      if (justPressed(3)) {
-        setState(prev => ({ ...prev, awayScore: prev.awayScore + 1 }));
+      // Y Button (3) OR Right Trigger (7) → Made Shot/Play
+      if (justPressed(3) || justPressed(7)) {
+        const currentState = stateRef.current;
+        const currentTeam = currentState.possession;
+        const ballX = ballPhysics.current.x;
+        const ballY = ballPhysics.current.y;
+        
+        if (currentState.sport === "basketball") {
+          const isFT = isFreeThrowModeRef.current;
+          const zone = isFT ? { points: 1, zone: "FT" } : detectBasketballZone(ballX, ballY);
+          
+          const shot: ShotEvent = {
+            id: Date.now().toString(),
+            x: ballX,
+            y: ballY,
+            made: true,
+            playerName: currentState.carrierName || "Unknown",
+            playerJersey: currentState.carrierNumber || "00",
+            team: currentTeam,
+            timestamp: Date.now(),
+            isFreeThrow: isFT,
+            points: zone.points,
+          };
+          
+          setState(prev => {
+            const newShots = [...prev.basketballShots, shot];
+            const newScore = (currentTeam === "home" ? prev.homeScore : prev.awayScore) + zone.points;
+            
+            return {
+              ...prev,
+              basketballShots: newShots,
+              homeScore: currentTeam === "home" ? newScore : prev.homeScore,
+              awayScore: currentTeam === "away" ? newScore : prev.awayScore,
+            };
+          });
+          
+          setIsFreeThrowMode(false);
+          toast({ description: `${zone.zone} made! +${zone.points} pts for ${currentState.carrierName}` });
+        } else if (currentState.sport === "football") {
+          const yards = currentPlayYardsRef.current;
+          
+          const play: FootballPlay = {
+            id: Date.now().toString(),
+            type: "rush",
+            yards,
+            playerName: currentState.carrierName || "Unknown",
+            playerJersey: currentState.carrierNumber || "00",
+            team: currentTeam,
+            timestamp: Date.now(),
+          };
+          
+          setState(prev => ({
+            ...prev,
+            footballPlays: [...prev.footballPlays, play]
+          }));
+          
+          setPlayHistory(prev => [{
+            id: play.id,
+            timestamp: play.timestamp,
+            type: "play" as const,
+            description: `${currentState.carrierName} rushed for ${yards > 0 ? '+' : ''}${yards} yards`
+          }, ...prev].slice(0, 100));
+          
+          setCurrentPlayYards(0);
+          toast({ description: `Rush: ${currentState.carrierName} ${yards > 0 ? '+' : ''}${yards} yards` });
+        }
       }
 
       // Left Bumper (4) → Home Score -1
@@ -1109,6 +1228,20 @@ export default function Visualizer() {
       // Right Bumper (5) → Away Score -1
       if (justPressed(5)) {
         setState(prev => ({ ...prev, awayScore: Math.max(0, prev.awayScore - 1) }));
+      }
+
+      // Left Trigger (6) → Add +1 point to possession team
+      if (justPressed(6)) {
+        setState(prev => {
+          const currentTeam = prev.possession;
+          return {
+            ...prev,
+            homeScore: currentTeam === "home" ? prev.homeScore + 1 : prev.homeScore,
+            awayScore: currentTeam === "away" ? prev.awayScore + 1 : prev.awayScore,
+          };
+        });
+        const teamName = stateRef.current.possession === "home" ? stateRef.current.homeTeam : stateRef.current.awayTeam;
+        toast({ description: `+1 point for ${teamName}` });
       }
 
       // Start Button (9) → Toggle Game Clock
@@ -2234,6 +2367,41 @@ export default function Visualizer() {
             </Button>
           </div>
         </Card>
+
+        {/* Controller Instructions */}
+        {gamepadConnected && (
+          <Card className="p-4 space-y-2 bg-green-950/20 border-green-500/30">
+            <Label className="text-xs uppercase tracking-wide text-green-400 flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+              Controller Active
+            </Label>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <div><span className="font-semibold text-foreground">L Stick / D-Pad:</span> Move Ball</div>
+              <div><span className="font-semibold text-foreground">RT / R2:</span> Sprint (2x speed)</div>
+              <div className="border-t border-card-border pt-1 mt-1"></div>
+              {state.sport === "basketball" && (
+                <>
+                  <div><span className="font-semibold text-green-400">Y / RT:</span> Made Shot (auto scores)</div>
+                  <div><span className="font-semibold text-red-400">X:</span> Missed Shot</div>
+                  <div><span className="font-semibold text-foreground">A:</span> Free Throw Mode</div>
+                </>
+              )}
+              {state.sport === "football" && (
+                <>
+                  <div><span className="font-semibold text-green-400">Y / RT:</span> Rush Play</div>
+                  <div><span className="font-semibold text-blue-400">X:</span> Pass Play</div>
+                  <div><span className="font-semibold text-foreground">Keyboard +/-:</span> Adjust Yards</div>
+                </>
+              )}
+              <div className="border-t border-card-border pt-1 mt-1"></div>
+              <div><span className="font-semibold text-foreground">LT / L2:</span> +1 Point</div>
+              <div><span className="font-semibold text-foreground">B:</span> Cycle Player</div>
+              <div><span className="font-semibold text-foreground">LB / RB:</span> Score ±1</div>
+              <div><span className="font-semibold text-foreground">Start:</span> Toggle Clock</div>
+              <div><span className="font-semibold text-foreground">Select:</span> Switch Possession</div>
+            </div>
+          </Card>
+        )}
 
         {/* Teams & Player Hotkeys */}
         <Card className="p-4 space-y-3">
