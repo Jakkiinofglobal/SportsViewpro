@@ -644,6 +644,36 @@ export default function Visualizer() {
     
     drawFieldGoal(100);  // Left endzone
     drawFieldGoal(1820); // Right endzone
+    
+    // Draw team names in endzones
+    ctx.save();
+    ctx.font = "bold 72px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    
+    // Left endzone - HOME (rotated vertically)
+    ctx.save();
+    ctx.translate(150, 540);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
+    ctx.lineWidth = 3;
+    ctx.strokeText("TOUCHDOWN", 0, 0);
+    ctx.fillText("TOUCHDOWN", 0, 0);
+    ctx.restore();
+    
+    // Right endzone - AWAY (rotated vertically)
+    ctx.save();
+    ctx.translate(1770, 540);
+    ctx.rotate(Math.PI / 2);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
+    ctx.lineWidth = 3;
+    ctx.strokeText("TOUCHDOWN", 0, 0);
+    ctx.fillText("TOUCHDOWN", 0, 0);
+    ctx.restore();
+    
+    ctx.restore();
   };
 
   const drawBaseballField = (ctx: CanvasRenderingContext2D) => {
