@@ -1288,19 +1288,13 @@ export default function Visualizer() {
     return () => {
       if (animationId) cancelAnimationFrame(animationId);
     };
-  }, [gamepadConnected, toast, setState]);
+  }, [gamepadConnected, toast, setState, setPlayHistory, setIsFreeThrowMode, setWaitingForShotResult, setCurrentPlayYards]);
 
   // Keyboard
-  // Helper: Detect basketball shot zone (2pt, 3pt, FT)
+  // Helper: Detect basketball shot zone (2pt, 3pt) - FT is only set via explicit mode
   const detectBasketballZone = (x: number, y: number): { points: number; zone: string } => {
     const centerX = 960;
     const centerY = 540;
-    
-    // Free throw lane area (approximate)
-    const inFtLane = Math.abs(x - centerX) < 120 && Math.abs(y - centerY) < 140;
-    if (inFtLane) {
-      return { points: 1, zone: "FT" };
-    }
     
     // 3-point line distance (approximate basketball court proportions)
     // NBA 3-point line is ~23.75 feet from hoop, scaled to our 1920x1080 court
