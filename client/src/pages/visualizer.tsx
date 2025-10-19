@@ -319,6 +319,7 @@ export default function Visualizer() {
   const [showHistory, setShowHistory] = useState(false);
   const [showChartModal, setShowChartModal] = useState(false);
   const [pendingShotLocation, setPendingShotLocation] = useState<{ x: number; y: number } | null>(null);
+  const pendingShotLocationRef = useRef<{ x: number; y: number } | null>(null);
   const [pendingPassStart, setPendingPassStart] = useState<{ x: number; y: number } | null>(null);
   const [waitingForShotResult, setWaitingForShotResult] = useState(false);
   const waitingForShotResultRef = useRef(false);
@@ -353,6 +354,11 @@ export default function Visualizer() {
   useEffect(() => {
     currentPlayYardsRef.current = currentPlayYards;
   }, [currentPlayYards]);
+  
+  // Sync pendingShotLocation ref with state
+  useEffect(() => {
+    pendingShotLocationRef.current = pendingShotLocation;
+  }, [pendingShotLocation]);
   
   // Sync waitingForShotResult ref with state
   useEffect(() => {
@@ -1239,7 +1245,12 @@ export default function Visualizer() {
           setWaitingForShotResult(false);
           toast({ description: `${zone.zone} made! +${zone.points} pts for ${currentState.carrierName}` });
         } else if (currentState.sport === "football") {
-          const yards = currentPlayYardsRef.current;
+          // Auto-calculate yards based on ball movement
+          let yards = 0;
+          if (pendingShotLocationRef.current) {
+            const pixelsMoved = ballX - pendingShotLocationRef.current.x;
+            yards = Math.round(pixelsMoved / 16);
+          }
           
           const play: FootballPlay = {
             id: Date.now().toString(),
@@ -1264,6 +1275,7 @@ export default function Visualizer() {
           }, ...prev].slice(0, 100));
           
           setCurrentPlayYards(0);
+          setPendingShotLocation(null);
           setWaitingForShotResult(false);
           toast({ description: `Rush: ${currentState.carrierName} ${yards > 0 ? '+' : ''}${yards} yards` });
         } else if (currentState.sport === "baseball") {
@@ -1328,7 +1340,12 @@ export default function Visualizer() {
           setWaitingForShotResult(false);
           toast({ description: `${zone.zone} missed by ${currentState.carrierName}` });
         } else if (currentState.sport === "football") {
-          const yards = currentPlayYardsRef.current;
+          // Auto-calculate yards based on ball movement
+          let yards = 0;
+          if (pendingShotLocationRef.current) {
+            const pixelsMoved = ballX - pendingShotLocationRef.current.x;
+            yards = Math.round(pixelsMoved / 16);
+          }
           
           const play: FootballPlay = {
             id: Date.now().toString(),
@@ -1353,6 +1370,7 @@ export default function Visualizer() {
           }, ...prev].slice(0, 100));
           
           setCurrentPlayYards(0);
+          setPendingShotLocation(null);
           setWaitingForShotResult(false);
           toast({ description: `Pass: ${currentState.carrierName} ${yards > 0 ? '+' : ''}${yards} yards` });
         } else if (currentState.sport === "baseball") {
@@ -1536,7 +1554,15 @@ export default function Visualizer() {
         }
       }
       if (e.key === "Shift") {
-        keysPressed.current.add("Shift");
+        e.preventDefault();
+        // Toggle possession
+        setState(prev => ({
+          ...prev,
+          possession: prev.possession === "home" ? "away" : "home"
+        }));
+        const newTeam = stateRef.current.possession === "home" ? stateRef.current.awayTeam : stateRef.current.homeTeam;
+        toast({ description: `Possession: ${newTeam}` });
+        return;
       }
       
       // FOOTBALL YARDAGE: +/- keys adjust yards
@@ -1674,10 +1700,18 @@ export default function Visualizer() {
           return;
         }
         
-        // FOOTBALL: Log rush (Z) or pass (X) with yards
+        // FOOTBALL: Log rush (Z) or pass (X) with auto-calculated yards
         if (currentState.sport === "football") {
           const isRush = e.key.toLowerCase() === "z";
-          const yards = currentPlayYardsRef.current; // Read from ref to avoid stale closure
+          
+          // Auto-calculate yards based on ball movement (120 yards = ~1920px width)
+          let yards = 0;
+          if (pendingShotLocation) {
+            const pixelsMoved = ballX - pendingShotLocation.x;
+            // Convert pixels to yards (1920px ≈ 120 yards, so ~16px per yard)
+            // Positive movement to the right = positive yards
+            yards = Math.round(pixelsMoved / 16);
+          }
           
           const play: FootballPlay = {
             id: Date.now().toString(),
@@ -1707,6 +1741,7 @@ export default function Visualizer() {
           
           // Reset yards and waiting state
           setCurrentPlayYards(0);
+          setPendingShotLocation(null);
           setWaitingForShotResult(false);
           
           toast({ 
@@ -4418,13 +4453,10 @@ export default function Visualizer() {
             />
             {!canvasFocused && (
               <div 
-                className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-lg cursor-pointer"
+                className="absolute top-4 right-4 bg-card/95 border border-primary rounded-lg px-3 py-2 text-xs shadow-lg cursor-pointer hover-elevate"
                 onClick={() => setCanvasFocused(true)}
               >
-                <div className="bg-card border-2 border-primary rounded-lg p-6 text-center shadow-xl">
-                  <p className="text-lg font-semibold mb-2">🖱️ Click to activate controls</p>
-                  <p className="text-sm text-muted-foreground">Keyboard and mouse controls are ready</p>
-                </div>
+                <p className="font-semibold">🖱️ Click to activate</p>
               </div>
             )}
           </div>
