@@ -539,7 +539,9 @@ export default function Visualizer() {
           const deltaX = currentBallX - playStartBallX.current;
           const directionMultiplier = stateRef.current.possession === "away" ? -1 : 1;
           const yardsGained = Math.round((deltaX * directionMultiplier) / 16);
+          console.log("⚡ Yards calc:", { currentBallX, playStartBallX: playStartBallX.current, deltaX, directionMultiplier, yardsGained, possession: stateRef.current.possession });
           setCurrentPlayYards(yardsGained);
+          currentPlayYardsRef.current = yardsGained; // Also update ref directly
           lastBallX.current = currentBallX;
         }
       }
@@ -658,8 +660,8 @@ export default function Visualizer() {
     ctx.font = "bold 48px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
-    ctx.strokeStyle = "rgba(0, 0, 0, 0.4)";
+    ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
     ctx.lineWidth = 2;
     
     // Left endzone - HOME (reads bottom to top)
