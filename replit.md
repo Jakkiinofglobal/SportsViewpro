@@ -70,14 +70,27 @@ SportSight is a full-stack application leveraging a modern web architecture.
   - Reduced hoop radius from 25px to 20px for more accurate court image alignment
   - Removed white backboards (rim-only rendering)
   - Removed net lines for cleaner visual
+  - Removed blue circle border around player images
   - Applied to both main canvas and Shot Chart modal
 - **Player Label Scale Controls**: New UI controls for customizing player name and image display
   - **Name Text Size slider**: Range 0.5x - 2.0x (default 1.0x) - scales font size from 8px to 32px
-  - **Player Image Size slider**: Range 0.5x - 2.0x (default 1.0x) - scales image from 20px to 80px
+  - **Player Image Size slider**: Range 0.5x - 2.0x (default 1.0x) - scales image from 40px to 160px (base size doubled to 80px)
   - Located in "Player Label" card in left control panel after "Ball Controls"
   - All label dimensions (height, width, positioning) scale proportionally
   - Settings persist in localStorage with proper defaults
   - New GameState properties: `playerLabelScale`, `playerImageScale`
+
+### Basketball Advanced Stats Tracking (3PT% & FT%)
+- **Free Throw System**: Press **SPACE BAR** before taking a shot to mark it as a free throw (worth 1 point)
+  - Toast notification confirms "Free Throw Mode" activation
+  - FT shots automatically tracked separately in Shot Chart
+- **Shot Chart Statistics**: Enhanced stats display with three separate shooting percentages
+  - **FG%**: Field Goal percentage (all non-free throw shots)
+  - **3PT%**: Three-point percentage (shots beyond 3-point line at 380px from hoop)
+  - **FT%**: Free Throw percentage (shots marked with SPACE BAR)
+  - Example: `FG: 8/12 (67%) | 3PT: 3/7 (43%) | FT: 4/5 (80%)`
+- **Shot Data Structure**: Extended `ShotEvent` interface with `isFreeThrow` and `points` properties
+- **UI Reminders**: Bottom hints bar shows "Right-Click Ball: Log Stat | SPACE before shot: Mark as Free Throw"
 
 ### Basketball Court Visual Enhancement
 - **Realistic Court Image**: Integrated professional basketball court image for both main canvas and Shot Chart modal
