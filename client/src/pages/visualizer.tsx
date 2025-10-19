@@ -719,13 +719,6 @@ export default function Visualizer() {
           imageSize
         );
         ctx.restore();
-        
-        // Image border
-        ctx.strokeStyle = "#3b82f6";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(ballX - labelWidth/2 + imageSize/2 + 5, ballY + 30 + labelHeight/2, imageSize/2, 0, Math.PI * 2);
-        ctx.stroke();
       }
       
       // Text (shifted right if image exists)
