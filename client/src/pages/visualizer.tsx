@@ -628,41 +628,41 @@ export default function Visualizer() {
       ctx.fillRect(0, 0, w, h);
     }
     
-    // Field goals at endzones (draw on top)
+    // Field goals at endzones (draw on top) - centered and 1/3 size
     const drawFieldGoal = (x: number) => {
       ctx.strokeStyle = "#ffcc00";
-      ctx.lineWidth = 6;
+      ctx.lineWidth = 4;
       
-      // Uprights - even shorter (1.5 inches off each end)
+      // Uprights - centered around middle, much shorter
       ctx.beginPath();
-      ctx.moveTo(x, 350);
-      ctx.lineTo(x, 274);
+      ctx.moveTo(x, 476);
+      ctx.lineTo(x, 426);
       ctx.stroke();
       
       ctx.beginPath();
-      ctx.moveTo(x, 730);
-      ctx.lineTo(x, 806);
+      ctx.moveTo(x, 604);
+      ctx.lineTo(x, 654);
       ctx.stroke();
       
-      // Crossbar - short to match uprights
-      ctx.lineWidth = 5;
+      // Crossbar - centered, 1/3 height
+      ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.moveTo(x, 350);
-      ctx.lineTo(x, 730);
+      ctx.moveTo(x, 476);
+      ctx.lineTo(x, 604);
       ctx.stroke();
     };
     
     drawFieldGoal(100);  // Left endzone
     drawFieldGoal(1820); // Right endzone
     
-    // Draw team labels (rotated vertically)
+    // Draw team labels (rotated vertically, smaller)
     ctx.save();
-    ctx.font = "bold 48px Arial";
+    ctx.font = "bold 32px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
-    ctx.lineWidth = 2;
+    ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.4)";
+    ctx.lineWidth = 1;
     
     // Left endzone - HOME (reads bottom to top)
     ctx.save();
