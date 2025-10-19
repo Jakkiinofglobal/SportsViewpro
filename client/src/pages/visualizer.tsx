@@ -1987,23 +1987,33 @@ export default function Visualizer() {
         return;
       }
       
-      // Right-click on ball = ready to log play
-      // Allow in Football mode (for Pass/Rush tracking) and in other sports if shot charts enabled
-      const canRightClick = state.sport === "football" || planLimits.canUseShotCharts;
-      console.log("🖱️ Right-click check:", { button: e.button, dist, ballSize: state.ballSize, sport: state.sport, canRightClick, waitingForShotResult: waitingForShotResultRef.current });
-      
-      if (e.button === 2 && dist < state.ballSize + 10 && canRightClick && !waitingForShotResultRef.current) {
-        console.log("✅ Right-click on ball detected! Setting waitingForShotResult=true");
-        setWaitingForShotResult(true);
-        
-        if (state.sport === "basketball") {
-          toast({ description: "Ready to log shot - Press Z for MADE or X for MISSED" });
-        } else if (state.sport === "football") {
-          toast({ description: "Ready to log play - Press Z for RUSH or X for PASS" });
-        } else if (state.sport === "baseball") {
-          toast({ description: "Ready to log hit - Press Z for HIT or X for OUT" });
+      // Right-click behavior:
+      // FOOTBALL: Right-click anywhere = snap/start play then stop play (toggle logging mode)
+      // OTHER SPORTS: Right-click on ball = ready to log play
+      if (e.button === 2) {
+        if (state.sport === "football") {
+          // Toggle logging mode (snap/stop play)
+          setWaitingForShotResult(prev => !prev);
+          if (!waitingForShotResultRef.current) {
+            toast({ description: "Play started - Right-click again to stop, then Z (rush) or X (pass)" });
+          } else {
+            toast({ description: "Play stopped - Press Z for RUSH or X for PASS" });
+          }
+          e.preventDefault();
+        } else {
+          // Other sports: Right-click on ball only
+          const canRightClick = planLimits.canUseShotCharts;
+          if (dist < state.ballSize + 10 && canRightClick && !waitingForShotResultRef.current) {
+            setWaitingForShotResult(true);
+            
+            if (state.sport === "basketball") {
+              toast({ description: "Ready to log shot - Press Z for MADE or X for MISSED" });
+            } else if (state.sport === "baseball") {
+              toast({ description: "Ready to log hit - Press Z for HIT or X for OUT" });
+            }
+            e.preventDefault();
+          }
         }
-        e.preventDefault();
       }
     };
     
