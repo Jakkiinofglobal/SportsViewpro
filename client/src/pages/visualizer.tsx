@@ -211,6 +211,9 @@ export default function Visualizer() {
   const planLimits = usePlanLimits();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeFeatureName, setUpgradeFeatureName] = useState("");
+  const [gamepadConnected, setGamepadConnected] = useState(false);
+  const gamepadRef = useRef<Gamepad | null>(null);
+  const lastGamepadButtons = useRef<boolean[]>([]);
 
   const showUpgrade = (featureName: string) => {
     setUpgradeFeatureName(featureName);
@@ -984,6 +987,155 @@ export default function Visualizer() {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
   }, [render]);
+
+  // Gamepad Detection & Polling
+  useEffect(() => {
+    const handleGamepadConnected = (e: GamepadEvent) => {
+      gamepadRef.current = e.gamepad;
+      setGamepadConnected(true);
+      toast({ description: `Controller Connected: ${e.gamepad.id}` });
+    };
+
+    const handleGamepadDisconnected = () => {
+      gamepadRef.current = null;
+      setGamepadConnected(false);
+      toast({ description: "Controller Disconnected", variant: "destructive" });
+    };
+
+    window.addEventListener("gamepadconnected", handleGamepadConnected);
+    window.addEventListener("gamepaddisconnected", handleGamepadDisconnected);
+
+    return () => {
+      window.removeEventListener("gamepadconnected", handleGamepadConnected);
+      window.removeEventListener("gamepaddisconnected", handleGamepadDisconnected);
+    };
+  }, [toast]);
+
+  // Gamepad Polling Loop
+  useEffect(() => {
+    if (!gamepadConnected) return;
+
+    let animationId: number;
+
+    const pollGamepad = () => {
+      const gamepads = navigator.getGamepads();
+      const gamepad = gamepads[0]; // Use first connected controller
+      
+      if (!gamepad) {
+        animationId = requestAnimationFrame(pollGamepad);
+        return;
+      }
+
+      // Standard gamepad mapping (Xbox/PlayStation compatible)
+      const buttons = gamepad.buttons;
+      const axes = gamepad.axes;
+
+      // D-Pad / Left Analog Stick → Move Ball
+      const deadzone = 0.15;
+      const moveSpeed = 8;
+      const sprintSpeed = 16;
+      
+      // Check if sprint button (Right Trigger / R2) is pressed
+      const isSprinting = buttons[7]?.pressed; // RT/R2
+      const speed = isSprinting ? sprintSpeed : moveSpeed;
+
+      // Analog stick (axes[0] = left/right, axes[1] = up/down)
+      if (Math.abs(axes[0]) > deadzone || Math.abs(axes[1]) > deadzone) {
+        ballPhysics.current.x += axes[0] * speed;
+        ballPhysics.current.y += axes[1] * speed;
+        ballPhysics.current.x = Math.max(0, Math.min(1920, ballPhysics.current.x));
+        ballPhysics.current.y = Math.max(0, Math.min(1080, ballPhysics.current.y));
+      }
+
+      // D-Pad (buttons 12-15)
+      if (buttons[12]?.pressed) ballPhysics.current.y = Math.max(0, ballPhysics.current.y - speed); // Up
+      if (buttons[13]?.pressed) ballPhysics.current.y = Math.min(1080, ballPhysics.current.y + speed); // Down
+      if (buttons[14]?.pressed) ballPhysics.current.x = Math.max(0, ballPhysics.current.x - speed); // Left
+      if (buttons[15]?.pressed) ballPhysics.current.x = Math.min(1920, ballPhysics.current.x + speed); // Right
+
+      // Sync ball physics to state periodically
+      setState(prev => ({
+        ...prev,
+        ballX: ballPhysics.current.x,
+        ballY: ballPhysics.current.y
+      }));
+
+      // Button Actions (detect press, not hold)
+      const wasPressed = (index: number) => lastGamepadButtons.current[index];
+      const isPressed = (index: number) => buttons[index]?.pressed;
+      const justPressed = (index: number) => isPressed(index) && !wasPressed(index);
+
+      // A Button (0) → Pulse Ball
+      if (justPressed(0)) {
+        pulseRing.current = { active: true, radius: 30, alpha: 1 };
+        if (stateRef.current.sport === "basketball") {
+          setIsFreeThrowMode(true);
+          toast({ description: "Free Throw Mode - Next shot worth 1 point" });
+        }
+      }
+
+      // B Button (1) → Cycle Ball Carrier (next player with hotkey)
+      if (justPressed(1)) {
+        const currentIndex = stateRef.current.playerHotkeys.findIndex(
+          h => h.jersey === stateRef.current.carrierNumber
+        );
+        const nextIndex = (currentIndex + 1) % stateRef.current.playerHotkeys.length;
+        const nextPlayer = stateRef.current.playerHotkeys[nextIndex];
+        if (nextPlayer) {
+          setState(prev => ({
+            ...prev,
+            carrierNumber: nextPlayer.jersey,
+            carrierName: nextPlayer.name
+          }));
+          toast({ description: `${nextPlayer.name} #${nextPlayer.jersey} set as carrier` });
+        }
+      }
+
+      // X Button (2) → Home Score +1
+      if (justPressed(2)) {
+        setState(prev => ({ ...prev, homeScore: prev.homeScore + 1 }));
+      }
+
+      // Y Button (3) → Away Score +1
+      if (justPressed(3)) {
+        setState(prev => ({ ...prev, awayScore: prev.awayScore + 1 }));
+      }
+
+      // Left Bumper (4) → Home Score -1
+      if (justPressed(4)) {
+        setState(prev => ({ ...prev, homeScore: Math.max(0, prev.homeScore - 1) }));
+      }
+
+      // Right Bumper (5) → Away Score -1
+      if (justPressed(5)) {
+        setState(prev => ({ ...prev, awayScore: Math.max(0, prev.awayScore - 1) }));
+      }
+
+      // Start Button (9) → Toggle Game Clock
+      if (justPressed(9)) {
+        setState(prev => ({ ...prev, gameClockRunning: !prev.gameClockRunning }));
+      }
+
+      // Select/Back Button (8) → Switch Possession
+      if (justPressed(8)) {
+        setState(prev => ({
+          ...prev,
+          possession: prev.possession === "home" ? "away" : "home"
+        }));
+      }
+
+      // Save button states for next frame
+      lastGamepadButtons.current = buttons.map(b => b.pressed);
+
+      animationId = requestAnimationFrame(pollGamepad);
+    };
+
+    animationId = requestAnimationFrame(pollGamepad);
+
+    return () => {
+      if (animationId) cancelAnimationFrame(animationId);
+    };
+  }, [gamepadConnected, toast, setState]);
 
   // Keyboard
   // Helper: Detect basketball shot zone (2pt, 3pt, FT)
@@ -3571,8 +3723,16 @@ export default function Visualizer() {
         </div>
 
         {/* Bottom Hints */}
-        <div className="bg-card/90 backdrop-blur-md border-t border-card-border flex items-center justify-center px-6 py-2">
-          <div className="text-xs text-muted-foreground text-center">
+        <div className="bg-card/90 backdrop-blur-md border-t border-card-border flex items-center justify-between px-6 py-2">
+          {/* Controller Status */}
+          {gamepadConnected && (
+            <div className="flex items-center gap-2 text-xs text-green-500">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+              <span className="font-semibold">Controller Connected</span>
+            </div>
+          )}
+          
+          <div className="text-xs text-muted-foreground text-center flex-1">
             <div>
               <span className="font-semibold">Arrows:</span> Move Ball &nbsp;|&nbsp;
               <span className="font-semibold">Shift:</span> Sprint &nbsp;|&nbsp;
