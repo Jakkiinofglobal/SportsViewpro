@@ -3779,6 +3779,27 @@ export default function Visualizer() {
                     ⌂
                   </Button>
                 </div>
+                <Button
+                  data-testid="button-r1-out"
+                  size="sm"
+                  variant="destructive"
+                  disabled={!state.atBatName}
+                  onClick={() => {
+                    setState(prev => {
+                      if (!prev.atBatName) return prev;
+                      const runner = { name: prev.atBatName, number: prev.atBatNumber };
+                      toast({ description: `${runner.name} is OUT` });
+                      return {
+                        ...prev,
+                        atBatName: "",
+                        atBatNumber: ""
+                      };
+                    });
+                  }}
+                  className="w-full"
+                >
+                  Out
+                </Button>
               </div>
 
               {/* Runner on 1st Base */}
@@ -3849,6 +3870,26 @@ export default function Visualizer() {
                     ⌂
                   </Button>
                 </div>
+                <Button
+                  data-testid="button-r2-out"
+                  size="sm"
+                  variant="destructive"
+                  disabled={!state.runners.first}
+                  onClick={() => {
+                    setState(prev => {
+                      if (!prev.runners.first) return prev;
+                      const runner = prev.runners.first;
+                      toast({ description: `${runner.name} is OUT` });
+                      return {
+                        ...prev,
+                        runners: { ...prev.runners, first: null }
+                      };
+                    });
+                  }}
+                  className="w-full"
+                >
+                  Out
+                </Button>
               </div>
 
               {/* Runner on 2nd Base */}
@@ -3900,6 +3941,26 @@ export default function Visualizer() {
                     ⌂
                   </Button>
                 </div>
+                <Button
+                  data-testid="button-r3-out"
+                  size="sm"
+                  variant="destructive"
+                  disabled={!state.runners.second}
+                  onClick={() => {
+                    setState(prev => {
+                      if (!prev.runners.second) return prev;
+                      const runner = prev.runners.second;
+                      toast({ description: `${runner.name} is OUT` });
+                      return {
+                        ...prev,
+                        runners: { ...prev.runners, second: null }
+                      };
+                    });
+                  }}
+                  className="w-full"
+                >
+                  Out
+                </Button>
               </div>
 
               {/* Runner on 3rd Base */}
@@ -3930,6 +3991,26 @@ export default function Visualizer() {
                   className="w-full"
                 >
                   Score (⌂)
+                </Button>
+                <Button
+                  data-testid="button-r4-out"
+                  size="sm"
+                  variant="destructive"
+                  disabled={!state.runners.third}
+                  onClick={() => {
+                    setState(prev => {
+                      if (!prev.runners.third) return prev;
+                      const runner = prev.runners.third;
+                      toast({ description: `${runner.name} is OUT` });
+                      return {
+                        ...prev,
+                        runners: { ...prev.runners, third: null }
+                      };
+                    });
+                  }}
+                  className="w-full"
+                >
+                  Out
                 </Button>
               </div>
 
