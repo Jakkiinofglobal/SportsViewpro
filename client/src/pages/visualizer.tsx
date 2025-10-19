@@ -1143,6 +1143,9 @@ export default function Visualizer() {
             };
           });
           
+          // Trigger goal flash
+          goalFlash.current = { active: true, team: currentTeam, startTime: performance.now() };
+          
           setIsFreeThrowMode(false);
           setWaitingForShotResult(false);
           toast({ description: `${zone.zone} made! +${zone.points} pts for ${currentState.carrierName}` });
@@ -1414,6 +1417,11 @@ export default function Visualizer() {
               awayScore: currentTeam === "away" ? newScore : prev.awayScore,
             };
           });
+          
+          // Trigger goal flash for made shots
+          if (made) {
+            goalFlash.current = { active: true, team: currentTeam, startTime: performance.now() };
+          }
           
           // Reset free throw mode
           setIsFreeThrowMode(false);
