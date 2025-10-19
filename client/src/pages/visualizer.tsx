@@ -505,7 +505,7 @@ export default function Visualizer() {
       ctx.fillRect(0, 0, w, h);
     }
     
-    // Basketball hoops (draw on top of image)
+    // Basketball hoops (draw on top of image, aligned with court image hoops)
     const drawHoop = (x: number, backboardX: number) => {
       // Backboard
       ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
@@ -530,8 +530,8 @@ export default function Visualizer() {
       }
     };
     
-    drawHoop(180, 100);  // Left hoop
-    drawHoop(1740, 1820); // Right hoop
+    drawHoop(145, 82);  // Left hoop - aligned with court image
+    drawHoop(1775, 1838); // Right hoop - aligned with court image
   };
 
   const drawFootballField = (ctx: CanvasRenderingContext2D) => {
@@ -1002,7 +1002,7 @@ export default function Visualizer() {
     
     // 3-point line distance (approximate basketball court proportions)
     // NBA 3-point line is ~23.75 feet from hoop, scaled to our 1920x1080 court
-    const hoopX = x < centerX ? 200 : 1720; // Left or right hoop
+    const hoopX = x < centerX ? 145 : 1775; // Left or right hoop (aligned with court image)
     const hoopY = centerY;
     const distToHoop = Math.sqrt(Math.pow(x - hoopX, 2) + Math.pow(y - hoopY, 2));
     
@@ -3489,13 +3489,13 @@ export default function Visualizer() {
                       {/* Court background image */}
                       <image href={basketballCourtImage} x="0" y="0" width="1920" height="1080" preserveAspectRatio="none"/>
                       
-                      {/* Backboards */}
-                      <rect x="95" y="480" width="10" height="120" fill="rgba(255, 255, 255, 0.9)"/>
-                      <rect x="1815" y="480" width="10" height="120" fill="rgba(255, 255, 255, 0.9)"/>
+                      {/* Backboards - aligned with court image */}
+                      <rect x="77" y="480" width="10" height="120" fill="rgba(255, 255, 255, 0.9)"/>
+                      <rect x="1833" y="480" width="10" height="120" fill="rgba(255, 255, 255, 0.9)"/>
                       
-                      {/* Hoops - EXACT positions */}
-                      <circle cx="180" cy="540" r="25" stroke="#ff6600" strokeWidth="8" fill="none"/>
-                      <circle cx="1740" cy="540" r="25" stroke="#ff6600" strokeWidth="8" fill="none"/>
+                      {/* Hoops - aligned with court image hoops */}
+                      <circle cx="145" cy="540" r="25" stroke="#ff6600" strokeWidth="8" fill="none"/>
+                      <circle cx="1775" cy="540" r="25" stroke="#ff6600" strokeWidth="8" fill="none"/>
                       
                       {/* Shots */}
                       {filteredShots.map(shot => (
