@@ -3393,21 +3393,23 @@ export default function Visualizer() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Players</SelectItem>
-                    {(() => {
-                      const roster = selectedTeamFilter === "home" ? state.homeRoster : state.awayRoster;
-                      console.log("Dropdown roster:", roster);
-                      console.log("Player hotkeys:", state.playerHotkeys);
-                      return roster.map(jersey => {
-                        const hotkey = state.playerHotkeys.find(h => h.jersey === jersey);
-                        const name = hotkey?.name || `Player ${jersey}`;
-                        console.log(`Jersey: ${jersey}, Hotkey found:`, hotkey, `Display: ${name} #${jersey}`);
-                        return (
-                          <SelectItem key={jersey} value={jersey}>
-                            {name} #{jersey}
-                          </SelectItem>
-                        );
-                      });
-                    })()}
+                    {state.playerHotkeys
+                      .filter(h => {
+                        // Show players from the selected team
+                        const isInHomeRoster = state.homeRoster.includes(h.jersey);
+                        const isInAwayRoster = state.awayRoster.includes(h.jersey);
+                        
+                        if (selectedTeamFilter === "home") {
+                          return isInHomeRoster || (!isInHomeRoster && !isInAwayRoster);
+                        } else {
+                          return isInAwayRoster || (!isInHomeRoster && !isInAwayRoster);
+                        }
+                      })
+                      .map(h => (
+                        <SelectItem key={h.jersey} value={h.jersey}>
+                          {h.name} #{h.jersey}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
