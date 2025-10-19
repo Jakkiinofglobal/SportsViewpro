@@ -1035,9 +1035,11 @@ export default function Visualizer() {
       const moveSpeed = 8;
       const sprintSpeed = 16;
       
-      // Check if sprint button (Right Trigger / R2) is pressed
-      const isSprinting = buttons[7]?.pressed; // RT/R2
-      const speed = isSprinting ? sprintSpeed : moveSpeed;
+      // Right Trigger (RT/R2) held = sprint (only if held, not just pressed)
+      const rtWasPressed = lastGamepadButtons.current[7];
+      const rtIsPressed = buttons[7]?.pressed;
+      const rtHeld = rtIsPressed && rtWasPressed; // Was pressed last frame AND this frame
+      const speed = rtHeld ? sprintSpeed : moveSpeed;
 
       // Analog stick (axes[0] = left/right, axes[1] = up/down)
       if (Math.abs(axes[0]) > deadzone || Math.abs(axes[1]) > deadzone) {
@@ -1091,69 +1093,22 @@ export default function Visualizer() {
         }
       }
 
-      // X Button (2) → Missed Shot/Play
-      if (justPressed(2)) {
-        const currentState = stateRef.current;
-        const currentTeam = currentState.possession;
+      // RT (Right Trigger, button 7) → Shoot/Log Play (Step 1: Capture location)
+      if (justPressed(7) && !waitingForShotResultRef.current) {
+        setWaitingForShotResult(true);
         const ballX = ballPhysics.current.x;
         const ballY = ballPhysics.current.y;
+        setPendingShotLocation({ x: ballX, y: ballY });
         
-        if (currentState.sport === "basketball") {
-          const isFT = isFreeThrowModeRef.current;
-          const zone = isFT ? { points: 1, zone: "FT" } : detectBasketballZone(ballX, ballY);
-          
-          const shot: ShotEvent = {
-            id: Date.now().toString(),
-            x: ballX,
-            y: ballY,
-            made: false,
-            playerName: currentState.carrierName || "Unknown",
-            playerJersey: currentState.carrierNumber || "00",
-            team: currentTeam,
-            timestamp: Date.now(),
-            isFreeThrow: isFT,
-            points: zone.points,
-          };
-          
-          setState(prev => ({
-            ...prev,
-            basketballShots: [...prev.basketballShots, shot]
-          }));
-          
-          setIsFreeThrowMode(false);
-          toast({ description: `${zone.zone} missed by ${currentState.carrierName}` });
-        } else if (currentState.sport === "football") {
-          const yards = currentPlayYardsRef.current;
-          
-          const play: FootballPlay = {
-            id: Date.now().toString(),
-            type: "pass",
-            yards,
-            playerName: currentState.carrierName || "Unknown",
-            playerJersey: currentState.carrierNumber || "00",
-            team: currentTeam,
-            timestamp: Date.now(),
-          };
-          
-          setState(prev => ({
-            ...prev,
-            footballPlays: [...prev.footballPlays, play]
-          }));
-          
-          setPlayHistory(prev => [{
-            id: play.id,
-            timestamp: play.timestamp,
-            type: "play" as const,
-            description: `${currentState.carrierName} passed for ${yards > 0 ? '+' : ''}${yards} yards`
-          }, ...prev].slice(0, 100));
-          
-          setCurrentPlayYards(0);
-          toast({ description: `Pass: ${currentState.carrierName} ${yards > 0 ? '+' : ''}${yards} yards` });
+        if (stateRef.current.sport === "basketball") {
+          toast({ description: "Shot ready! Press Y (make) or X (miss)" });
+        } else if (stateRef.current.sport === "football") {
+          toast({ description: "Play ready! Press Y (rush) or X (pass)" });
         }
       }
 
-      // Y Button (3) OR Right Trigger (7) → Made Shot/Play
-      if (justPressed(3) || justPressed(7)) {
+      // Y Button (3) → Make/Rush (Step 2: Confirm made shot or rush play)
+      if (justPressed(3) && waitingForShotResultRef.current) {
         const currentState = stateRef.current;
         const currentTeam = currentState.possession;
         const ballX = ballPhysics.current.x;
@@ -1189,6 +1144,7 @@ export default function Visualizer() {
           });
           
           setIsFreeThrowMode(false);
+          setWaitingForShotResult(false);
           toast({ description: `${zone.zone} made! +${zone.points} pts for ${currentState.carrierName}` });
         } else if (currentState.sport === "football") {
           const yards = currentPlayYardsRef.current;
@@ -1216,45 +1172,109 @@ export default function Visualizer() {
           }, ...prev].slice(0, 100));
           
           setCurrentPlayYards(0);
+          setWaitingForShotResult(false);
           toast({ description: `Rush: ${currentState.carrierName} ${yards > 0 ? '+' : ''}${yards} yards` });
         }
       }
 
-      // Left Bumper (4) → Home Score -1
-      if (justPressed(4)) {
-        setState(prev => ({ ...prev, homeScore: Math.max(0, prev.homeScore - 1) }));
-      }
-
-      // Right Bumper (5) → Away Score -1
-      if (justPressed(5)) {
-        setState(prev => ({ ...prev, awayScore: Math.max(0, prev.awayScore - 1) }));
-      }
-
-      // Left Trigger (6) → Add +1 point to possession team
-      if (justPressed(6)) {
-        setState(prev => {
-          const currentTeam = prev.possession;
-          return {
-            ...prev,
-            homeScore: currentTeam === "home" ? prev.homeScore + 1 : prev.homeScore,
-            awayScore: currentTeam === "away" ? prev.awayScore + 1 : prev.awayScore,
+      // X Button (2) → Miss/Pass (Step 2: Confirm missed shot or pass play)
+      if (justPressed(2) && waitingForShotResultRef.current) {
+        const currentState = stateRef.current;
+        const currentTeam = currentState.possession;
+        const ballX = ballPhysics.current.x;
+        const ballY = ballPhysics.current.y;
+        
+        if (currentState.sport === "basketball") {
+          const isFT = isFreeThrowModeRef.current;
+          const zone = isFT ? { points: 1, zone: "FT" } : detectBasketballZone(ballX, ballY);
+          
+          const shot: ShotEvent = {
+            id: Date.now().toString(),
+            x: ballX,
+            y: ballY,
+            made: false,
+            playerName: currentState.carrierName || "Unknown",
+            playerJersey: currentState.carrierNumber || "00",
+            team: currentTeam,
+            timestamp: Date.now(),
+            isFreeThrow: isFT,
+            points: zone.points,
           };
-        });
-        const teamName = stateRef.current.possession === "home" ? stateRef.current.homeTeam : stateRef.current.awayTeam;
-        toast({ description: `+1 point for ${teamName}` });
+          
+          setState(prev => ({
+            ...prev,
+            basketballShots: [...prev.basketballShots, shot]
+          }));
+          
+          setIsFreeThrowMode(false);
+          setWaitingForShotResult(false);
+          toast({ description: `${zone.zone} missed by ${currentState.carrierName}` });
+        } else if (currentState.sport === "football") {
+          const yards = currentPlayYardsRef.current;
+          
+          const play: FootballPlay = {
+            id: Date.now().toString(),
+            type: "pass",
+            yards,
+            playerName: currentState.carrierName || "Unknown",
+            playerJersey: currentState.carrierNumber || "00",
+            team: currentTeam,
+            timestamp: Date.now(),
+          };
+          
+          setState(prev => ({
+            ...prev,
+            footballPlays: [...prev.footballPlays, play]
+          }));
+          
+          setPlayHistory(prev => [{
+            id: play.id,
+            timestamp: play.timestamp,
+            type: "play" as const,
+            description: `${currentState.carrierName} passed for ${yards > 0 ? '+' : ''}${yards} yards`
+          }, ...prev].slice(0, 100));
+          
+          setCurrentPlayYards(0);
+          setWaitingForShotResult(false);
+          toast({ description: `Pass: ${currentState.carrierName} ${yards > 0 ? '+' : ''}${yards} yards` });
+        }
       }
 
-      // Start Button (9) → Toggle Game Clock
-      if (justPressed(9)) {
+      // LT (Left Trigger, button 6) → Start/Stop Shot/Play Clock
+      if (justPressed(6)) {
+        if (stateRef.current.sport === "basketball") {
+          setState(prev => ({ ...prev, shotClockTime: 24 }));
+          toast({ description: "Shot clock reset to 24" });
+        } else if (stateRef.current.sport === "football") {
+          setState(prev => ({ ...prev, playClockTime: 40 }));
+          toast({ description: "Play clock reset to 40" });
+        }
+      }
+
+      // LB (Left Bumper, button 4) → Toggle Game Clock
+      if (justPressed(4)) {
         setState(prev => ({ ...prev, gameClockRunning: !prev.gameClockRunning }));
+        const status = stateRef.current.gameClockRunning ? "stopped" : "started";
+        toast({ description: `Game clock ${status}` });
       }
 
-      // Select/Back Button (8) → Switch Possession
-      if (justPressed(8)) {
+      // RB (Right Bumper, button 5) → Toggle Possession
+      if (justPressed(5)) {
         setState(prev => ({
           ...prev,
           possession: prev.possession === "home" ? "away" : "home"
         }));
+        const newTeam = stateRef.current.possession === "home" ? stateRef.current.awayTeam : stateRef.current.homeTeam;
+        toast({ description: `Possession: ${newTeam}` });
+      }
+
+      // Start Button (9) → (Reserved for future use)
+      // Could be used for pausing, menu, etc.
+
+      // Select/Back Button (8) → Cancel shot/play logging
+      if (justPressed(8) && waitingForShotResultRef.current) {
+        setWaitingForShotResult(false);
+        toast({ description: "Shot/play logging cancelled" });
       }
 
       // Save button states for next frame
@@ -2377,28 +2397,31 @@ export default function Visualizer() {
             </Label>
             <div className="text-xs text-muted-foreground space-y-1">
               <div><span className="font-semibold text-foreground">L Stick / D-Pad:</span> Move Ball</div>
-              <div><span className="font-semibold text-foreground">RT / R2:</span> Sprint (2x speed)</div>
+              <div><span className="font-semibold text-foreground">RT Hold:</span> Sprint (2x speed)</div>
               <div className="border-t border-card-border pt-1 mt-1"></div>
               {state.sport === "basketball" && (
                 <>
-                  <div><span className="font-semibold text-green-400">Y / RT:</span> Made Shot (auto scores)</div>
-                  <div><span className="font-semibold text-red-400">X:</span> Missed Shot</div>
+                  <div><span className="font-semibold text-blue-400">RT Press:</span> Shoot / Log Shot</div>
+                  <div><span className="font-semibold text-green-400">Y:</span> Make (after RT)</div>
+                  <div><span className="font-semibold text-red-400">X:</span> Miss (after RT)</div>
                   <div><span className="font-semibold text-foreground">A:</span> Free Throw Mode</div>
+                  <div><span className="font-semibold text-foreground">LT:</span> Reset Shot Clock</div>
                 </>
               )}
               {state.sport === "football" && (
                 <>
-                  <div><span className="font-semibold text-green-400">Y / RT:</span> Rush Play</div>
-                  <div><span className="font-semibold text-blue-400">X:</span> Pass Play</div>
+                  <div><span className="font-semibold text-blue-400">RT Press:</span> Log Play</div>
+                  <div><span className="font-semibold text-green-400">Y:</span> Rush (after RT)</div>
+                  <div><span className="font-semibold text-blue-400">X:</span> Pass (after RT)</div>
                   <div><span className="font-semibold text-foreground">Keyboard +/-:</span> Adjust Yards</div>
+                  <div><span className="font-semibold text-foreground">LT:</span> Reset Play Clock</div>
                 </>
               )}
               <div className="border-t border-card-border pt-1 mt-1"></div>
-              <div><span className="font-semibold text-foreground">LT / L2:</span> +1 Point</div>
-              <div><span className="font-semibold text-foreground">B:</span> Cycle Player</div>
-              <div><span className="font-semibold text-foreground">LB / RB:</span> Score ±1</div>
-              <div><span className="font-semibold text-foreground">Start:</span> Toggle Clock</div>
-              <div><span className="font-semibold text-foreground">Select:</span> Switch Possession</div>
+              <div><span className="font-semibold text-foreground">LB:</span> Toggle Game Clock</div>
+              <div><span className="font-semibold text-foreground">RB:</span> Toggle Possession</div>
+              <div><span className="font-semibold text-foreground">B:</span> Cycle Ball Carrier</div>
+              <div><span className="font-semibold text-foreground">Select:</span> Cancel (if waiting)</div>
             </div>
           </Card>
         )}
