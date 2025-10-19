@@ -283,6 +283,7 @@ export default function Visualizer() {
   const [pendingShotLocation, setPendingShotLocation] = useState<{ x: number; y: number } | null>(null);
   const [pendingPassStart, setPendingPassStart] = useState<{ x: number; y: number } | null>(null);
   const [waitingForShotResult, setWaitingForShotResult] = useState(false);
+  const waitingForShotResultRef = useRef(false);
   const [currentPlayYards, setCurrentPlayYards] = useState(0);
   const currentPlayYardsRef = useRef(0);
   const [selectedTeamFilter, setSelectedTeamFilter] = useState<"home" | "away">("home");
@@ -309,6 +310,11 @@ export default function Visualizer() {
   useEffect(() => {
     currentPlayYardsRef.current = currentPlayYards;
   }, [currentPlayYards]);
+  
+  // Sync waitingForShotResult ref with state
+  useEffect(() => {
+    waitingForShotResultRef.current = waitingForShotResult;
+  }, [waitingForShotResult]);
 
   // Track possession time
   useEffect(() => {
@@ -1109,14 +1115,15 @@ export default function Visualizer() {
       // Step 2: Press Z for made, X for missed, Escape to cancel
       
       // Cancel shot logging if Escape pressed
-      if (waitingForShotResult && e.key === "Escape") {
+      if (waitingForShotResultRef.current && e.key === "Escape") {
         setWaitingForShotResult(false);
         toast({ description: "Shot logging cancelled" });
         return;
       }
       
       // Step 2: User presses Z (made) or X (missed)
-      if (waitingForShotResult && (e.key.toLowerCase() === "z" || e.key.toLowerCase() === "x")) {
+      if (waitingForShotResultRef.current && (e.key.toLowerCase() === "z" || e.key.toLowerCase() === "x")) {
+        console.log("⌨️ Z/X key pressed while waiting for result:", { key: e.key, waitingForShotResult: waitingForShotResultRef.current, sport: stateRef.current.sport });
         e.preventDefault();
         const made = e.key.toLowerCase() === "z";
         const currentState = stateRef.current;
@@ -1214,13 +1221,6 @@ export default function Visualizer() {
           toast({ description: "Baseball tracking - what should this do?" });
           return;
         }
-      }
-      
-      // Cancel waiting if Escape is pressed
-      if (waitingForShotResult && e.key === "Escape") {
-        setWaitingForShotResult(false);
-        toast({ description: "Shot logging cancelled" });
-        return;
       }
       
       // Check for score hotkeys
@@ -1397,10 +1397,22 @@ export default function Visualizer() {
         return;
       }
       
-      // Right-click on ball = ready to shoot (if shot charts enabled)
-      if (e.button === 2 && dist < state.ballSize + 10 && planLimits.canUseShotCharts && !waitingForShotResult) {
+      // Right-click on ball = ready to log play
+      // Allow in Football mode (for Pass/Rush tracking) and in other sports if shot charts enabled
+      const canRightClick = state.sport === "football" || planLimits.canUseShotCharts;
+      console.log("🖱️ Right-click check:", { button: e.button, dist, ballSize: state.ballSize, sport: state.sport, canRightClick, waitingForShotResult: waitingForShotResultRef.current });
+      
+      if (e.button === 2 && dist < state.ballSize + 10 && canRightClick && !waitingForShotResultRef.current) {
+        console.log("✅ Right-click on ball detected! Setting waitingForShotResult=true");
         setWaitingForShotResult(true);
-        toast({ description: "Ready to log shot - Press Z for MADE or X for MISSED" });
+        
+        if (state.sport === "basketball") {
+          toast({ description: "Ready to log shot - Press Z for MADE or X for MISSED" });
+        } else if (state.sport === "football") {
+          toast({ description: "Ready to log play - Press Z for RUSH or X for PASS" });
+        } else if (state.sport === "baseball") {
+          toast({ description: "Ready to log hit - Press Z for HIT or X for OUT" });
+        }
         e.preventDefault();
       }
     };
@@ -2691,7 +2703,7 @@ export default function Visualizer() {
               </div>
               <div className="text-xs text-muted-foreground text-center">
                 Press + to add 5 yards, − to subtract 1 yard<br/>
-                Then press Z (rush) or X (pass) to log play
+                Right-click ball, then press Z (rush) or X (pass) to log
               </div>
             </Card>
             <Button
