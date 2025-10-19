@@ -1746,18 +1746,10 @@ export default function Visualizer() {
           return;
         }
         
-        // FOOTBALL: Log rush (Z) or pass (X) with auto-calculated yards
+        // FOOTBALL: Log rush (Z) or pass (X) with current play yards
         if (currentState.sport === "football") {
           const isRush = e.key.toLowerCase() === "z";
-          
-          // Auto-calculate yards based on ball movement (120 yards = ~1920px width)
-          let yards = 0;
-          if (pendingShotLocation) {
-            const pixelsMoved = ballX - pendingShotLocation.x;
-            // Convert pixels to yards (1920px ≈ 120 yards, so ~16px per yard)
-            // Positive movement to the right = positive yards
-            yards = Math.round(pixelsMoved / 16);
-          }
+          const yards = currentPlayYardsRef.current;
           
           const play: FootballPlay = {
             id: Date.now().toString(),
@@ -1768,6 +1760,8 @@ export default function Visualizer() {
             team: currentTeam,
             timestamp: Date.now(),
           };
+          
+          console.log(`🏈 Logging ${isRush ? "rush" : "pass"}:`, play);
           
           // Save to state
           setState(prev => ({
@@ -1783,8 +1777,11 @@ export default function Visualizer() {
             description: `${currentState.carrierName} ${isRush ? "rushed" : "passed"} for ${yards > 0 ? '+' : ''}${yards} yards`
           }, ...prev].slice(0, 100));
           
-          // Reset yards and waiting state
+          // Reset for next play
+          playStartBallX.current = ballX;
+          lastBallX.current = ballX;
           setCurrentPlayYards(0);
+          currentPlayYardsRef.current = 0;
           setPendingShotLocation(null);
           setWaitingForShotResult(false);
           
