@@ -525,12 +525,16 @@ export default function Visualizer() {
       
       // Football: Auto-calculate yardage from ball movement (1920px = 120 yards, ~16px/yard)
       // Only update if ball has actually moved (to preserve manual adjustments)
+      // HOME team gains + yards moving right (toward away endzone)
+      // AWAY team gains + yards moving left (toward home endzone)
       if (stateRef.current.sport === "football") {
         const currentBallX = ballPhysics.current.x;
         const ballMoved = Math.abs(currentBallX - lastBallX.current) > 1; // Threshold of 1px to avoid floating point issues
         
         if (ballMoved) {
-          const yardsGained = Math.round((currentBallX - playStartBallX.current) / 16);
+          const deltaX = currentBallX - playStartBallX.current;
+          const directionMultiplier = stateRef.current.possession === "away" ? -1 : 1;
+          const yardsGained = Math.round((deltaX * directionMultiplier) / 16);
           setCurrentPlayYards(yardsGained);
           lastBallX.current = currentBallX;
         }
