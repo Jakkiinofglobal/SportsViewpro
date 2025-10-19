@@ -674,7 +674,7 @@ export default function Visualizer() {
     
     // Right endzone - AWAY (reads top to bottom)
     ctx.save();
-    ctx.translate(1720, 540);
+    ctx.translate(1707, 540);
     ctx.rotate(Math.PI / 2);
     ctx.strokeText("AWAY", 0, 0);
     ctx.fillText("AWAY", 0, 0);
