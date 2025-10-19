@@ -3560,9 +3560,9 @@ export default function Visualizer() {
                       {/* Center circle */}
                       <circle cx="960" cy="540" r="120" stroke="white" strokeWidth="6" fill="none"/>
                       
-                      {/* 3-point arcs - EXACT from game */}
-                      <path d="M 200,740 A 400,400 0 0,1 200,340" stroke="white" strokeWidth="6" fill="none"/>
-                      <path d="M 1720,340 A 400,400 0 0,1 1720,740" stroke="white" strokeWidth="6" fill="none"/>
+                      {/* 3-point arcs - curve toward center of court */}
+                      <path d="M 200,740 A 400,400 0 0,0 200,340" stroke="white" strokeWidth="6" fill="none"/>
+                      <path d="M 1720,340 A 400,400 0 0,0 1720,740" stroke="white" strokeWidth="6" fill="none"/>
                       
                       {/* Backboards */}
                       <rect x="95" y="480" width="10" height="120" fill="rgba(255, 255, 255, 0.9)"/>
