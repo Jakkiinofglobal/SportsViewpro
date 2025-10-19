@@ -3698,14 +3698,17 @@ export default function Visualizer() {
                     variant="outline"
                     disabled={!state.atBatName}
                     onClick={() => {
-                      const runner = { name: state.atBatName, number: state.atBatNumber };
-                      setState(prev => ({
-                        ...prev,
-                        runners: { ...prev.runners, first: runner },
-                        atBatName: "",
-                        atBatNumber: ""
-                      }));
-                      toast({ description: `${runner.name} → 1B` });
+                      setState(prev => {
+                        if (!prev.atBatName) return prev;
+                        const runner = { name: prev.atBatName, number: prev.atBatNumber };
+                        toast({ description: `${runner.name} → 1B` });
+                        return {
+                          ...prev,
+                          runners: { ...prev.runners, first: runner },
+                          atBatName: "",
+                          atBatNumber: ""
+                        };
+                      });
                     }}
                   >
                     1B
@@ -3716,14 +3719,17 @@ export default function Visualizer() {
                     variant="outline"
                     disabled={!state.atBatName}
                     onClick={() => {
-                      const runner = { name: state.atBatName, number: state.atBatNumber };
-                      setState(prev => ({
-                        ...prev,
-                        runners: { ...prev.runners, second: runner },
-                        atBatName: "",
-                        atBatNumber: ""
-                      }));
-                      toast({ description: `${runner.name} → 2B` });
+                      setState(prev => {
+                        if (!prev.atBatName) return prev;
+                        const runner = { name: prev.atBatName, number: prev.atBatNumber };
+                        toast({ description: `${runner.name} → 2B` });
+                        return {
+                          ...prev,
+                          runners: { ...prev.runners, second: runner },
+                          atBatName: "",
+                          atBatNumber: ""
+                        };
+                      });
                     }}
                   >
                     2B
@@ -3734,14 +3740,17 @@ export default function Visualizer() {
                     variant="outline"
                     disabled={!state.atBatName}
                     onClick={() => {
-                      const runner = { name: state.atBatName, number: state.atBatNumber };
-                      setState(prev => ({
-                        ...prev,
-                        runners: { ...prev.runners, third: runner },
-                        atBatName: "",
-                        atBatNumber: ""
-                      }));
-                      toast({ description: `${runner.name} → 3B` });
+                      setState(prev => {
+                        if (!prev.atBatName) return prev;
+                        const runner = { name: prev.atBatName, number: prev.atBatNumber };
+                        toast({ description: `${runner.name} → 3B` });
+                        return {
+                          ...prev,
+                          runners: { ...prev.runners, third: runner },
+                          atBatName: "",
+                          atBatNumber: ""
+                        };
+                      });
                     }}
                   >
                     3B
@@ -3752,16 +3761,19 @@ export default function Visualizer() {
                     variant="outline"
                     disabled={!state.atBatName}
                     onClick={() => {
-                      const runner = { name: state.atBatName, number: state.atBatNumber };
-                      const team = state.possession === "home" ? "homeScore" : "awayScore";
-                      goalFlash.current = { active: true, team: state.possession, startTime: performance.now() };
-                      setState(prev => ({
-                        ...prev,
-                        [team]: prev[team] + 1,
-                        atBatName: "",
-                        atBatNumber: ""
-                      }));
-                      toast({ description: `${runner.name} scores! 🎉` });
+                      setState(prev => {
+                        if (!prev.atBatName) return prev;
+                        const runner = { name: prev.atBatName, number: prev.atBatNumber };
+                        const team = prev.possession === "home" ? "homeScore" : "awayScore";
+                        goalFlash.current = { active: true, team: prev.possession, startTime: performance.now() };
+                        toast({ description: `${runner.name} scores! 🎉` });
+                        return {
+                          ...prev,
+                          [team]: prev[team] + 1,
+                          atBatName: "",
+                          atBatNumber: ""
+                        };
+                      });
                     }}
                   >
                     ⌂
@@ -3782,12 +3794,15 @@ export default function Visualizer() {
                     variant="outline"
                     disabled={!state.runners.first}
                     onClick={() => {
-                      const runner = state.runners.first!;
-                      setState(prev => ({
-                        ...prev,
-                        runners: { ...prev.runners, first: null, second: runner }
-                      }));
-                      toast({ description: `${runner.name} → 2B` });
+                      setState(prev => {
+                        if (!prev.runners.first) return prev;
+                        const runner = prev.runners.first;
+                        toast({ description: `${runner.name} → 2B` });
+                        return {
+                          ...prev,
+                          runners: { ...prev.runners, first: null, second: runner }
+                        };
+                      });
                     }}
                   >
                     2B
@@ -3798,12 +3813,15 @@ export default function Visualizer() {
                     variant="outline"
                     disabled={!state.runners.first}
                     onClick={() => {
-                      const runner = state.runners.first!;
-                      setState(prev => ({
-                        ...prev,
-                        runners: { ...prev.runners, first: null, third: runner }
-                      }));
-                      toast({ description: `${runner.name} → 3B` });
+                      setState(prev => {
+                        if (!prev.runners.first) return prev;
+                        const runner = prev.runners.first;
+                        toast({ description: `${runner.name} → 3B` });
+                        return {
+                          ...prev,
+                          runners: { ...prev.runners, first: null, third: runner }
+                        };
+                      });
                     }}
                   >
                     3B
@@ -3814,15 +3832,18 @@ export default function Visualizer() {
                     variant="outline"
                     disabled={!state.runners.first}
                     onClick={() => {
-                      const runner = state.runners.first!;
-                      const team = state.possession === "home" ? "homeScore" : "awayScore";
-                      goalFlash.current = { active: true, team: state.possession, startTime: performance.now() };
-                      setState(prev => ({
-                        ...prev,
-                        [team]: prev[team] + 1,
-                        runners: { ...prev.runners, first: null }
-                      }));
-                      toast({ description: `${runner.name} scores! 🎉` });
+                      setState(prev => {
+                        if (!prev.runners.first) return prev;
+                        const runner = prev.runners.first;
+                        const team = prev.possession === "home" ? "homeScore" : "awayScore";
+                        goalFlash.current = { active: true, team: prev.possession, startTime: performance.now() };
+                        toast({ description: `${runner.name} scores! 🎉` });
+                        return {
+                          ...prev,
+                          [team]: prev[team] + 1,
+                          runners: { ...prev.runners, first: null }
+                        };
+                      });
                     }}
                   >
                     ⌂
@@ -3843,12 +3864,15 @@ export default function Visualizer() {
                     variant="outline"
                     disabled={!state.runners.second}
                     onClick={() => {
-                      const runner = state.runners.second!;
-                      setState(prev => ({
-                        ...prev,
-                        runners: { ...prev.runners, second: null, third: runner }
-                      }));
-                      toast({ description: `${runner.name} → 3B` });
+                      setState(prev => {
+                        if (!prev.runners.second) return prev;
+                        const runner = prev.runners.second;
+                        toast({ description: `${runner.name} → 3B` });
+                        return {
+                          ...prev,
+                          runners: { ...prev.runners, second: null, third: runner }
+                        };
+                      });
                     }}
                   >
                     3B
@@ -3859,15 +3883,18 @@ export default function Visualizer() {
                     variant="outline"
                     disabled={!state.runners.second}
                     onClick={() => {
-                      const runner = state.runners.second!;
-                      const team = state.possession === "home" ? "homeScore" : "awayScore";
-                      goalFlash.current = { active: true, team: state.possession, startTime: performance.now() };
-                      setState(prev => ({
-                        ...prev,
-                        [team]: prev[team] + 1,
-                        runners: { ...prev.runners, second: null }
-                      }));
-                      toast({ description: `${runner.name} scores! 🎉` });
+                      setState(prev => {
+                        if (!prev.runners.second) return prev;
+                        const runner = prev.runners.second;
+                        const team = prev.possession === "home" ? "homeScore" : "awayScore";
+                        goalFlash.current = { active: true, team: prev.possession, startTime: performance.now() };
+                        toast({ description: `${runner.name} scores! 🎉` });
+                        return {
+                          ...prev,
+                          [team]: prev[team] + 1,
+                          runners: { ...prev.runners, second: null }
+                        };
+                      });
                     }}
                   >
                     ⌂
@@ -3887,15 +3914,18 @@ export default function Visualizer() {
                   variant="outline"
                   disabled={!state.runners.third}
                   onClick={() => {
-                    const runner = state.runners.third!;
-                    const team = state.possession === "home" ? "homeScore" : "awayScore";
-                    goalFlash.current = { active: true, team: state.possession, startTime: performance.now() };
-                    setState(prev => ({
-                      ...prev,
-                      [team]: prev[team] + 1,
-                      runners: { ...prev.runners, third: null }
-                    }));
-                    toast({ description: `${runner.name} scores! 🎉` });
+                    setState(prev => {
+                      if (!prev.runners.third) return prev;
+                      const runner = prev.runners.third;
+                      const team = prev.possession === "home" ? "homeScore" : "awayScore";
+                      goalFlash.current = { active: true, team: prev.possession, startTime: performance.now() };
+                      toast({ description: `${runner.name} scores! 🎉` });
+                      return {
+                        ...prev,
+                        [team]: prev[team] + 1,
+                        runners: { ...prev.runners, third: null }
+                      };
+                    });
                   }}
                   className="w-full"
                 >
