@@ -1437,9 +1437,12 @@ export default function Visualizer() {
     const errors: string[] = [];
     const usedHotkeys = new Set<string>();
 
+    console.log(`🔍 Parsing ${team} team input:`, { totalLines: lines.length, lines });
+
     for (const line of lines) {
       // Format: "Name,#number,hotkey" or "Name,#number" or "Name" (comma-separated)
       const parts = line.split(",").map(p => p.trim());
+      console.log(`🔍 Line: "${line}" → Parts:`, parts, `(length: ${parts.length})`);
       
       let name = "";
       let jersey = "";
