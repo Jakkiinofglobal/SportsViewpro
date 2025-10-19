@@ -47,6 +47,8 @@ interface ShotEvent {
   playerJersey: string;
   team: "home" | "away";
   timestamp: number;
+  isFreeThrow?: boolean;
+  points?: number;
 }
 
 interface PassEvent {
@@ -293,6 +295,8 @@ export default function Visualizer() {
   const [pendingPassStart, setPendingPassStart] = useState<{ x: number; y: number } | null>(null);
   const [waitingForShotResult, setWaitingForShotResult] = useState(false);
   const waitingForShotResultRef = useRef(false);
+  const [isFreeThrowMode, setIsFreeThrowMode] = useState(false);
+  const isFreeThrowModeRef = useRef(false);
   const [currentPlayYards, setCurrentPlayYards] = useState(0);
   const currentPlayYardsRef = useRef(0);
   const [selectedTeamFilter, setSelectedTeamFilter] = useState<"home" | "away">("home");
@@ -327,6 +331,11 @@ export default function Visualizer() {
   useEffect(() => {
     waitingForShotResultRef.current = waitingForShotResult;
   }, [waitingForShotResult]);
+  
+  // Sync isFreeThrowMode ref with state
+  useEffect(() => {
+    isFreeThrowModeRef.current = isFreeThrowMode;
+  }, [isFreeThrowMode]);
 
   // Load sport field/court background images
   useEffect(() => {
@@ -1010,6 +1019,11 @@ export default function Visualizer() {
       if (e.key === " " || e.key === "Spacebar") {
         e.preventDefault();
         pulseRing.current = { active: true, radius: 30, alpha: 1 };
+        // BASKETBALL: Mark next shot as free throw
+        if (stateRef.current.sport === "basketball") {
+          setIsFreeThrowMode(true);
+          toast({ description: "Free Throw Mode - Next shot worth 1 point" });
+        }
       }
       if (e.key === "Shift") {
         keysPressed.current.add("Shift");
@@ -1066,7 +1080,9 @@ export default function Visualizer() {
         
         // BASKETBALL: Log shot at ball position, auto-calculate points
         if (currentState.sport === "basketball") {
-          const zone = detectBasketballZone(ballX, ballY);
+          const isFT = isFreeThrowModeRef.current;
+          const zone = isFT ? { points: 1, zone: "FT" } : detectBasketballZone(ballX, ballY);
+          
           const shot: ShotEvent = {
             id: Date.now().toString(),
             x: ballX,
@@ -1076,6 +1092,8 @@ export default function Visualizer() {
             playerJersey: currentState.carrierNumber || "00",
             team: currentTeam,
             timestamp: Date.now(),
+            isFreeThrow: isFT,
+            points: zone.points,
           };
           
           console.log("🏀 Logging basketball shot:", shot);
@@ -1098,6 +1116,8 @@ export default function Visualizer() {
             };
           });
           
+          // Reset free throw mode
+          setIsFreeThrowMode(false);
           setWaitingForShotResult(false);
           toast({ 
             description: made 
@@ -3496,14 +3516,27 @@ export default function Visualizer() {
               });
               
               console.log("📊 Filtered shots:", filteredShots);
-              const made = filteredShots.filter(s => s.made).length;
-              const missed = filteredShots.filter(s => !s.made).length;
-              const pct = filteredShots.length > 0 ? Math.round((made / filteredShots.length) * 100) : 0;
+              
+              // Calculate FG% (all non-free throw shots)
+              const fgShots = filteredShots.filter(s => !s.isFreeThrow);
+              const fgMade = fgShots.filter(s => s.made).length;
+              const fgPct = fgShots.length > 0 ? Math.round((fgMade / fgShots.length) * 100) : 0;
+              
+              // Calculate 3PT%
+              const threePointers = filteredShots.filter(s => s.points === 3);
+              const threeMade = threePointers.filter(s => s.made).length;
+              const threePct = threePointers.length > 0 ? Math.round((threeMade / threePointers.length) * 100) : 0;
+              
+              // Calculate FT%
+              const freeThrows = filteredShots.filter(s => s.isFreeThrow);
+              const ftMade = freeThrows.filter(s => s.made).length;
+              const ftPct = freeThrows.length > 0 ? Math.round((ftMade / freeThrows.length) * 100) : 0;
               
               return (
                 <div className="space-y-4">
-                  <div className="text-lg font-bold bg-muted p-4 rounded">
-                    Total: {filteredShots.length} | Made: {made} | Missed: {missed} | FG%: {pct}%
+                  <div className="text-sm font-bold bg-muted p-4 rounded space-y-1">
+                    <div>FG: {fgMade}/{fgShots.length} ({fgPct}%) | 3PT: {threeMade}/{threePointers.length} ({threePct}%) | FT: {ftMade}/{freeThrows.length} ({ftPct}%)</div>
+                    <div className="text-xs text-muted-foreground">Total Shots: {filteredShots.length}</div>
                   </div>
                   <div className="relative w-full rounded-lg shadow-2xl overflow-hidden" style={{ paddingBottom: "56.25%" }}>
                     <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1920 1080">
