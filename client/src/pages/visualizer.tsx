@@ -474,6 +474,9 @@ export default function Visualizer() {
         ...prev,
         sport: user.selectedSport as Sport
       }));
+      // Reset play state when sport changes (both state and ref)
+      setWaitingForShotResult(false);
+      waitingForShotResultRef.current = false;
     }
   }, [user?.selectedSport]);
 
@@ -1493,11 +1496,22 @@ export default function Visualizer() {
 
       // RB (Right Bumper, button 5) → Toggle Possession
       if (justPressed(5)) {
+        const newPossession = stateRef.current.possession === "home" ? "away" : "home";
         setState(prev => ({
           ...prev,
-          possession: prev.possession === "home" ? "away" : "home"
+          possession: newPossession
         }));
-        const newTeam = stateRef.current.possession === "home" ? stateRef.current.awayTeam : stateRef.current.homeTeam;
+        
+        // Recalculate yards with new possession direction for football
+        if (stateRef.current.sport === "football") {
+          const currentBallX = ballPhysics.current.x;
+          const deltaX = currentBallX - playStartBallX.current;
+          const directionMultiplier = newPossession === "away" ? -1 : 1;
+          const yardsGained = Math.round((deltaX * directionMultiplier) / 16);
+          setCurrentPlayYards(yardsGained);
+        }
+        
+        const newTeam = newPossession === "home" ? stateRef.current.homeTeam : stateRef.current.awayTeam;
         toast({ description: `Possession: ${newTeam}` });
       }
 
@@ -1578,11 +1592,22 @@ export default function Visualizer() {
       if (e.key === "Shift") {
         e.preventDefault();
         // Toggle possession
+        const newPossession = stateRef.current.possession === "home" ? "away" : "home";
         setState(prev => ({
           ...prev,
-          possession: prev.possession === "home" ? "away" : "home"
+          possession: newPossession
         }));
-        const newTeam = stateRef.current.possession === "home" ? stateRef.current.awayTeam : stateRef.current.homeTeam;
+        
+        // Recalculate yards with new possession direction for football
+        if (stateRef.current.sport === "football") {
+          const currentBallX = ballPhysics.current.x;
+          const deltaX = currentBallX - playStartBallX.current;
+          const directionMultiplier = newPossession === "away" ? -1 : 1;
+          const yardsGained = Math.round((deltaX * directionMultiplier) / 16);
+          setCurrentPlayYards(yardsGained);
+        }
+        
+        const newTeam = newPossession === "home" ? stateRef.current.homeTeam : stateRef.current.awayTeam;
         toast({ description: `Possession: ${newTeam}` });
         return;
       }
@@ -1997,13 +2022,18 @@ export default function Visualizer() {
       // OTHER SPORTS: Right-click on ball = ready to log play
       if (e.button === 2) {
         if (state.sport === "football") {
-          // Toggle logging mode (snap/stop play)
-          setWaitingForShotResult(prev => !prev);
+          // Football play flow: Click to start → Click to stop → Z/X to log
           if (!waitingForShotResultRef.current) {
-            // Starting play - capture QB/passer
+            // First click: Start play - capture QB and reset yardage tracking
+            const ballX = ballPhysics.current.x;
             playStartQB.current = state.carrierName || "";
-            toast({ description: "Play started - Right-click again to stop, then Z (rush) or X (pass)" });
+            playStartBallX.current = ballX;
+            lastBallX.current = ballX;
+            setCurrentPlayYards(0);
+            setWaitingForShotResult(true);
+            toast({ description: "Play started - Move ball and right-click to stop" });
           } else {
+            // Second click: Stop play (keep waitingForShotResult true so Z/X can log)
             toast({ description: "Play stopped - Press Z for RUSH or X for PASS" });
           }
           e.preventDefault();
