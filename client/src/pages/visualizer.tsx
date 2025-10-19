@@ -329,6 +329,7 @@ export default function Visualizer() {
   const currentPlayYardsRef = useRef(0);
   const playStartBallX = useRef<number>(960); // Track starting ball X position for yardage calculation
   const lastBallX = useRef<number>(960); // Track last ball X to detect actual movement
+  const playStartQB = useRef<string>(""); // Track QB/passer at start of play for pass logging
   const [selectedTeamFilter, setSelectedTeamFilter] = useState<"home" | "away">("home");
   const [selectedPlayerFilter, setSelectedPlayerFilter] = useState<string>("all");
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -1403,18 +1404,16 @@ export default function Visualizer() {
           setWaitingForShotResult(false);
           toast({ description: `${zone.zone} missed by ${currentState.carrierName}` });
         } else if (currentState.sport === "football") {
-          // Auto-calculate yards based on ball movement
-          let yards = 0;
-          if (pendingShotLocationRef.current) {
-            const pixelsMoved = ballX - pendingShotLocationRef.current.x;
-            yards = Math.round(pixelsMoved / 16);
-          }
+          // Pass logging: QB → Receiver
+          const qbName = playStartQB.current || "Unknown";
+          const receiverName = currentState.carrierName || "Unknown";
+          const yards = currentPlayYardsRef.current;
           
           const play: FootballPlay = {
             id: Date.now().toString(),
             type: "pass",
-            yards: currentPlayYardsRef.current,
-            playerName: currentState.carrierName || "Unknown",
+            yards: yards,
+            playerName: receiverName, // Receiver
             playerJersey: currentState.carrierNumber || "00",
             team: currentTeam,
             timestamp: Date.now(),
@@ -1425,20 +1424,26 @@ export default function Visualizer() {
             footballPlays: [...prev.footballPlays, play]
           }));
           
+          // Description shows QB → Receiver
+          const description = qbName === receiverName 
+            ? `${receiverName} passed for ${yards > 0 ? '+' : ''}${yards} yards`
+            : `${qbName} → ${receiverName} for ${yards > 0 ? '+' : ''}${yards} yards`;
+          
           setPlayHistory(prev => [{
             id: play.id,
             timestamp: play.timestamp,
             type: "play" as const,
-            description: `${currentState.carrierName} passed for ${currentPlayYardsRef.current > 0 ? '+' : ''}${currentPlayYardsRef.current} yards`
+            description: description
           }, ...prev].slice(0, 100));
           
           // Reset for next play
           playStartBallX.current = ballX;
           lastBallX.current = ballX;
+          playStartQB.current = "";
           setCurrentPlayYards(0);
           setPendingShotLocation(null);
           setWaitingForShotResult(false);
-          toast({ description: `Pass: ${currentState.carrierName} ${currentPlayYardsRef.current > 0 ? '+' : ''}${currentPlayYardsRef.current} yards` });
+          toast({ description: description });
         } else if (currentState.sport === "baseball") {
           const hit: BaseballHit = {
             id: Date.now().toString(),
@@ -1995,6 +2000,8 @@ export default function Visualizer() {
           // Toggle logging mode (snap/stop play)
           setWaitingForShotResult(prev => !prev);
           if (!waitingForShotResultRef.current) {
+            // Starting play - capture QB/passer
+            playStartQB.current = state.carrierName || "";
             toast({ description: "Play started - Right-click again to stop, then Z (rush) or X (pass)" });
           } else {
             toast({ description: "Play stopped - Press Z for RUSH or X for PASS" });
@@ -3659,7 +3666,7 @@ export default function Visualizer() {
               </div>
               <div className="text-xs text-muted-foreground text-center">
                 Press + to add 5 yards, − to subtract 1 yard<br/>
-                Right-click ball, then press Z (rush) or X (pass) to log
+                Right-click to snap/stop play, then Z (rush) or X (pass) to log
               </div>
             </Card>
             <Button
@@ -4759,14 +4766,20 @@ export default function Visualizer() {
               <>
                 <div>
                   <span className="font-semibold">Arrows:</span> Move Ball &nbsp;|&nbsp;
-                  <span className="font-semibold">Shift:</span> Sprint &nbsp;|&nbsp;
-                  <span className="font-semibold">Space:</span> Pulse &nbsp;|&nbsp;
+                  <span className="font-semibold">Shift:</span> {state.sport === "football" ? "Toggle Possession" : "Sprint"} &nbsp;|&nbsp;
+                  {state.sport === "basketball" && (
+                    <><span className="font-semibold">Space:</span> Pulse &nbsp;|&nbsp;</>
+                  )}
                   <span className="font-semibold">Mouse:</span> Click & Drag
                 </div>
                 <div className="mt-1">
-                  <span className="font-semibold">Right-Click Ball:</span> Log Stat &nbsp;
+                  {state.sport === "football" ? (
+                    <><span className="font-semibold">Right-Click:</span> Snap/Stop Play &nbsp;|&nbsp; <span className="font-semibold">Z:</span> Rush &nbsp;|&nbsp; <span className="font-semibold">X:</span> Pass</>
+                  ) : (
+                    <><span className="font-semibold">Right-Click Ball:</span> Log Stat</>
+                  )}
                   {state.sport === "basketball" && (
-                    <>|&nbsp; <span className="font-semibold">SPACE before shot:</span> Mark as Free Throw</>
+                    <> &nbsp;|&nbsp; <span className="font-semibold">SPACE before shot:</span> Mark as Free Throw</>
                   )}
                 </div>
               </>
