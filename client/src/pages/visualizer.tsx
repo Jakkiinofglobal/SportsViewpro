@@ -1487,9 +1487,13 @@ export default function Visualizer() {
         continue;
       }
       
-      // Block Z and X (reserved for shot logging)
+      // Block Z, X, +, - (reserved for game actions)
       if (hotkey.toLowerCase() === "z" || hotkey.toLowerCase() === "x") {
         errors.push(`Cannot use "${hotkey}" as hotkey (reserved for shot logging: Z=Made, X=Missed)`);
+        continue;
+      }
+      if (hotkey === "+" || hotkey === "-" || hotkey === "=" || hotkey === "_") {
+        errors.push(`Cannot use "${hotkey}" as hotkey (reserved for football yardage: +=Add 5, -=Subtract 1)`);
         continue;
       }
 
@@ -2655,7 +2659,7 @@ export default function Visualizer() {
               variant="default"
               onClick={() => {
                 if (!planLimits.canUseShotCharts) {
-                  showUpgrade("Pass Charts");
+                  showUpgrade("Pass/Rush Charts");
                   return;
                 }
                 setShowChartModal(true);
@@ -2663,7 +2667,7 @@ export default function Visualizer() {
               className="w-full flex items-center gap-2"
             >
               <BarChart3 className="h-4 w-4" />
-              {planLimits.canUseShotCharts ? "Pass Chart" : <><Lock className="h-3 w-3" /> Pass Chart</>}
+              {planLimits.canUseShotCharts ? "Pass/Rush Chart" : <><Lock className="h-3 w-3" /> Pass/Rush Chart</>}
             </Button>
           </>
         )}
@@ -3405,7 +3409,7 @@ export default function Visualizer() {
           <DialogHeader>
             <DialogTitle>
               {state.sport === "basketball" ? "Shot Chart" : 
-               state.sport === "football" ? "Pass Chart" : "Hit Chart"}
+               state.sport === "football" ? "Pass/Rush Chart" : "Hit Chart"}
             </DialogTitle>
             <DialogDescription>
               Click team to see all shots, or select a player to see individual stats
@@ -3534,7 +3538,7 @@ export default function Visualizer() {
               );
             })()}
             
-            {/* Football Pass Chart */}
+            {/* Football Pass/Rush Chart */}
             {state.sport === "football" && (() => {
               const filteredPasses = (state.footballPasses || []).filter(pass => {
                 if (pass.team !== selectedTeamFilter) return false;
