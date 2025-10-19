@@ -595,24 +595,24 @@ export default function Visualizer() {
     // Field goals at endzones (draw on top)
     const drawFieldGoal = (x: number) => {
       ctx.strokeStyle = "#ffcc00";
-      ctx.lineWidth = 8;
-      
-      // Uprights - narrower to fit between white yard lines
-      ctx.beginPath();
-      ctx.moveTo(x, 270);
-      ctx.lineTo(x, 120);
-      ctx.stroke();
-      
-      ctx.beginPath();
-      ctx.moveTo(x, 810);
-      ctx.lineTo(x, 960);
-      ctx.stroke();
-      
-      // Crossbar - shorter to match narrower uprights
       ctx.lineWidth = 6;
+      
+      // Uprights - much shorter, fits between white lines
       ctx.beginPath();
-      ctx.moveTo(x, 270);
-      ctx.lineTo(x, 810);
+      ctx.moveTo(x, 350);
+      ctx.lineTo(x, 250);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(x, 730);
+      ctx.lineTo(x, 830);
+      ctx.stroke();
+      
+      // Crossbar - short to match uprights
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(x, 350);
+      ctx.lineTo(x, 730);
       ctx.stroke();
     };
     
@@ -828,12 +828,12 @@ export default function Visualizer() {
   const drawRunners = (ctx: CanvasRenderingContext2D) => {
     const { runners, atBatName, atBatNumber } = state;
     
-    // Base positions - correct mapping to match diamond geometry
-    // Diamond points: Home(960,900) → 1B(1420,440) → 2B(960,180) → 3B(500,440) → Home
+    // Base positions - CLOSER to home plate, matching white squares on field
+    // Home(960,900) → bases much closer
     const bases = [
-      { x: 1420, y: 440, runner: runners.first, label: "1B" },  // Right side
-      { x: 960, y: 180, runner: runners.second, label: "2B" },  // Top
-      { x: 500, y: 440, runner: runners.third, label: "3B" },   // Left side
+      { x: 1180, y: 680, runner: runners.first, label: "1B" },  // Right side - closer
+      { x: 960, y: 520, runner: runners.second, label: "2B" },  // Top - closer
+      { x: 740, y: 680, runner: runners.third, label: "3B" },   // Left side - closer
     ];
     
     // Draw runners on bases
@@ -1490,7 +1490,7 @@ export default function Visualizer() {
       // Ensure canvas is marked as focused when keyboard is used
       setCanvasFocused(true);
       
-      // BASEBALL: Arrow keys move runner between bases
+      // BASEBALL: Arrow keys move runners properly
       if (stateRef.current.sport === "baseball" && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
         e.preventDefault();
         const currentState = stateRef.current;
@@ -1505,37 +1505,60 @@ export default function Visualizer() {
           number: currentState.atBatNumber
         };
         
-        if (e.key === "ArrowRight") {
-          // Move to 1st base
-          setState(prev => ({
+        setState(prev => {
+          const newRunners = { ...prev.runners };
+          let scored = 0;
+          let message = "";
+          
+          if (e.key === "ArrowRight") {
+            // At-bat goes to 1B, advance all existing runners
+            if (newRunners.third) scored++;
+            newRunners.third = newRunners.second || null;
+            newRunners.second = newRunners.first || null;
+            newRunners.first = runner;
+            message = `${runner.name} → 1st Base`;
+          } else if (e.key === "ArrowUp") {
+            // At-bat goes to 2B, advance all runners
+            if (newRunners.third) scored++;
+            if (newRunners.second) scored++;
+            newRunners.third = newRunners.first || null;
+            newRunners.second = runner;
+            newRunners.first = null;
+            message = `${runner.name} → 2nd Base (double)`;
+          } else if (e.key === "ArrowLeft") {
+            // At-bat goes to 3B, advance all runners
+            if (newRunners.third) scored++;
+            if (newRunners.second) scored++;
+            if (newRunners.first) scored++;
+            newRunners.third = runner;
+            newRunners.second = null;
+            newRunners.first = null;
+            message = `${runner.name} → 3rd Base (triple)`;
+          } else if (e.key === "ArrowDown") {
+            // At-bat scores (home run), all runners score
+            scored = 1;
+            if (newRunners.first) scored++;
+            if (newRunners.second) scored++;
+            if (newRunners.third) scored++;
+            newRunners.first = null;
+            newRunners.second = null;
+            newRunners.third = null;
+            message = `${runner.name} HOME RUN! 🎉`;
+          }
+          
+          if (scored > 0) {
+            goalFlash.current = { active: true, startTime: performance.now(), team: currentState.possession };
+          }
+          
+          toast({ description: message });
+          
+          return {
             ...prev,
-            runners: { ...prev.runners, first: runner }
-          }));
-          toast({ description: `${runner.name} → 1st Base` });
-        } else if (e.key === "ArrowUp") {
-          // Move to 2nd base
-          setState(prev => ({
-            ...prev,
-            runners: { ...prev.runners, second: runner }
-          }));
-          toast({ description: `${runner.name} → 2nd Base` });
-        } else if (e.key === "ArrowLeft") {
-          // Move to 3rd base
-          setState(prev => ({
-            ...prev,
-            runners: { ...prev.runners, third: runner }
-          }));
-          toast({ description: `${runner.name} → 3rd Base` });
-        } else if (e.key === "ArrowDown") {
-          // Score run (move to home)
-          setState(prev => ({
-            ...prev,
-            homeScore: prev.possession === "home" ? prev.homeScore + 1 : prev.homeScore,
-            awayScore: prev.possession === "away" ? prev.awayScore + 1 : prev.awayScore,
-          }));
-          goalFlash.current = { active: true, startTime: performance.now(), team: currentState.possession };
-          toast({ description: `${runner.name} scores! 🎉` });
-        }
+            runners: newRunners,
+            homeScore: prev.possession === "home" ? prev.homeScore + scored : prev.homeScore,
+            awayScore: prev.possession === "away" ? prev.awayScore + scored : prev.awayScore,
+          };
+        });
         return;
       }
       
