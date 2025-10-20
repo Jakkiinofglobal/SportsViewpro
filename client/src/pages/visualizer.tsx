@@ -416,12 +416,25 @@ export default function Visualizer() {
     if (saved) {
       try {
         const data = JSON.parse(saved);
+        
+        // MIGRATION: Add team field to old playerHotkeys
+        const migratedHotkeys = (data.playerHotkeys || []).map((h: any) => {
+          if (h.team) return h; // Already has team field
+          // Determine team by checking which roster contains this jersey
+          const isHome = (data.homeRoster || []).includes(h.jersey);
+          const isAway = (data.awayRoster || []).includes(h.jersey);
+          return {
+            ...h,
+            team: isHome ? "home" : isAway ? "away" : "home" // Default to home if unclear
+          };
+        });
+        
         setState({
           ...data,
           homeVideoClips: data.homeVideoClips || [],
           awayVideoClips: data.awayVideoClips || [],
           soundSlots: data.soundSlots || Array(8).fill(null),
-          playerHotkeys: data.playerHotkeys || [],
+          playerHotkeys: migratedHotkeys,
           scoreHotkeys: data.scoreHotkeys || {
             home1: "",
             home2: "",
@@ -2345,11 +2358,25 @@ export default function Visualizer() {
     const saved = localStorage.getItem("msv:session");
     if (saved) {
       const data = JSON.parse(saved);
+      
+      // MIGRATION: Add team field to old playerHotkeys
+      const migratedHotkeys = (data.playerHotkeys || []).map((h: any) => {
+        if (h.team) return h; // Already has team field
+        // Determine team by checking which roster contains this jersey
+        const isHome = (data.homeRoster || []).includes(h.jersey);
+        const isAway = (data.awayRoster || []).includes(h.jersey);
+        return {
+          ...h,
+          team: isHome ? "home" : isAway ? "away" : "home" // Default to home if unclear
+        };
+      });
+      
       setState({
         ...data,
         homeVideoClips: data.homeVideoClips || [],
         awayVideoClips: data.awayVideoClips || [],
         soundSlots: data.soundSlots || Array(8).fill(null),
+        playerHotkeys: migratedHotkeys,
         basketballQuarter: data.basketballQuarter || 1,
         quarter: data.quarter || 1,
         playerLabelScale: data.playerLabelScale ?? 1.0,
