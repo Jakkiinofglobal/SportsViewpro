@@ -35,6 +35,7 @@ interface PlayerHotkey {
   jersey: string;
   name: string;
   hotkey: string;
+  team: "home" | "away";
   imageDataURL?: string;
 }
 
@@ -2195,7 +2196,7 @@ export default function Visualizer() {
         }
 
         usedHotkeys.add(hotkey.toLowerCase());
-        hotkeys.push({ jersey, name, hotkey: hotkey.toLowerCase() });
+        hotkeys.push({ jersey, name, hotkey: hotkey.toLowerCase(), team });
       }
       
       // Add to roster regardless of hotkey (after validation passes)
@@ -2226,22 +2227,14 @@ export default function Visualizer() {
     if (roster.length > 0) {
       // Update roster AND hotkeys in a single setState to avoid race conditions
       setState(prev => {
-        // Remove ALL hotkeys for the team we're loading (whether they were there before or not)
-        // Keep ONLY hotkeys that belong to the OTHER team
-        const otherTeamRoster = team === "home" ? prev.awayRoster : prev.homeRoster;
-        const currentTeamOldRoster = team === "home" ? prev.homeRoster : prev.awayRoster;
-        
-        // Filter out:
-        // 1. Old hotkeys from the team we're loading (currentTeamOldRoster)
-        // 2. Keep only hotkeys from the OTHER team (otherTeamRoster)
-        const filteredHotkeys = prev.playerHotkeys.filter(h => {
-          // Keep this hotkey ONLY if it belongs to the OTHER team's roster
-          return otherTeamRoster.includes(h.jersey);
-        });
+        // Remove ALL hotkeys for the team we're loading
+        // Keep ONLY hotkeys from the OTHER team (by checking h.team field)
+        const otherTeam = team === "home" ? "away" : "home";
+        const filteredHotkeys = prev.playerHotkeys.filter(h => h.team === otherTeam);
         
         console.log(`Loading ${team} team with ${roster.length} players`);
         console.log(`Removed ${prev.playerHotkeys.length - filteredHotkeys.length} old ${team} hotkeys`);
-        console.log(`Kept ${filteredHotkeys.length} other team hotkeys`);
+        console.log(`Kept ${filteredHotkeys.length} ${otherTeam} team hotkeys`);
         console.log(`Adding ${hotkeys.length} new ${team} hotkeys`);
         
         return {
@@ -2265,7 +2258,7 @@ export default function Visualizer() {
         // Clear ball carrier if they belong to the cleared team
         const updates: Partial<GameState> = {
           homeRoster: [],
-          playerHotkeys: prev.playerHotkeys.filter(h => !prev.homeRoster.includes(h.jersey)),
+          playerHotkeys: prev.playerHotkeys.filter(h => h.team !== "home"),
         };
         
         if (isCarrierFromHomeTeam) {
@@ -2305,7 +2298,7 @@ export default function Visualizer() {
         // Clear ball carrier if they belong to the cleared team
         const updates: Partial<GameState> = {
           awayRoster: [],
-          playerHotkeys: prev.playerHotkeys.filter(h => !prev.awayRoster.includes(h.jersey)),
+          playerHotkeys: prev.playerHotkeys.filter(h => h.team !== "away"),
         };
         
         if (isCarrierFromAwayTeam) {
