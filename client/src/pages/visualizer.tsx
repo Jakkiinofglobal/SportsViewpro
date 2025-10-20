@@ -2226,22 +2226,29 @@ export default function Visualizer() {
     if (roster.length > 0) {
       // Update roster AND hotkeys in a single setState to avoid race conditions
       setState(prev => {
-        // Determine which roster is the "other" team
+        // Remove ALL hotkeys for the team we're loading (whether they were there before or not)
+        // Keep ONLY hotkeys that belong to the OTHER team
         const otherTeamRoster = team === "home" ? prev.awayRoster : prev.homeRoster;
+        const currentTeamOldRoster = team === "home" ? prev.homeRoster : prev.awayRoster;
         
-        // Keep only the OTHER team's hotkeys (filter by the other team's roster)
-        const otherTeamHotkeys = prev.playerHotkeys.filter(h => otherTeamRoster.includes(h.jersey));
+        // Filter out:
+        // 1. Old hotkeys from the team we're loading (currentTeamOldRoster)
+        // 2. Keep only hotkeys from the OTHER team (otherTeamRoster)
+        const filteredHotkeys = prev.playerHotkeys.filter(h => {
+          // Keep this hotkey ONLY if it belongs to the OTHER team's roster
+          return otherTeamRoster.includes(h.jersey);
+        });
         
         console.log(`Loading ${team} team with ${roster.length} players`);
-        console.log(`Other team roster:`, otherTeamRoster);
-        console.log(`Other team hotkeys kept:`, otherTeamHotkeys);
-        console.log(`New hotkeys:`, hotkeys);
+        console.log(`Removed ${prev.playerHotkeys.length - filteredHotkeys.length} old ${team} hotkeys`);
+        console.log(`Kept ${filteredHotkeys.length} other team hotkeys`);
+        console.log(`Adding ${hotkeys.length} new ${team} hotkeys`);
         
         return {
           ...prev,
           homeRoster: team === "home" ? roster : prev.homeRoster,
           awayRoster: team === "away" ? roster : prev.awayRoster,
-          playerHotkeys: [...otherTeamHotkeys, ...hotkeys]
+          playerHotkeys: [...filteredHotkeys, ...hotkeys]
         };
       });
 
