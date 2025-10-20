@@ -2948,12 +2948,12 @@ export default function Visualizer() {
               <div className="text-xs text-muted-foreground">Active Hotkeys:</div>
               
               {/* Home Team Hotkeys */}
-              {state.playerHotkeys.filter(h => h.hotkey && state.homeRoster.includes(h.jersey)).length > 0 && (
+              {state.playerHotkeys.filter(h => h.team === "home" && h.hotkey).length > 0 && (
                 <div>
                   <div className="text-xs font-semibold text-primary mb-1">{state.homeTeam}</div>
                   <div className="text-xs space-y-2">
-                    {state.playerHotkeys.filter(h => h.hotkey && state.homeRoster.includes(h.jersey)).map(h => (
-                      <div key={h.jersey} className="flex justify-between items-center gap-2">
+                    {state.playerHotkeys.filter(h => h.team === "home" && h.hotkey).map(h => (
+                      <div key={`home-${h.jersey}`} className="flex justify-between items-center gap-2">
                         <span className="font-bold">{h.hotkey.toUpperCase()}</span>
                         <span className="font-mono flex-1">{h.name} #{h.jersey}</span>
                         {planLimits.canUsePlayerImages ? (
@@ -3024,12 +3024,12 @@ export default function Visualizer() {
               )}
 
               {/* Away Team Hotkeys */}
-              {state.playerHotkeys.filter(h => h.hotkey && state.awayRoster.includes(h.jersey)).length > 0 && (
+              {state.playerHotkeys.filter(h => h.team === "away" && h.hotkey).length > 0 && (
                 <div>
                   <div className="text-xs font-semibold text-primary mb-1">{state.awayTeam}</div>
                   <div className="text-xs space-y-2">
-                    {state.playerHotkeys.filter(h => h.hotkey && state.awayRoster.includes(h.jersey)).map(h => (
-                      <div key={h.jersey} className="flex justify-between items-center gap-2">
+                    {state.playerHotkeys.filter(h => h.team === "away" && h.hotkey).map(h => (
+                      <div key={`away-${h.jersey}`} className="flex justify-between items-center gap-2">
                         <span className="font-bold">{h.hotkey.toUpperCase()}</span>
                         <span className="font-mono flex-1">{h.name} #{h.jersey}</span>
                         {planLimits.canUsePlayerImages ? (
